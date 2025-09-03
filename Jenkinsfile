@@ -23,7 +23,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploy stage: Pretending to deploy the application...'
-                docker-compose up -d --force-recreate backend
+                docker compose up -d --force-recreate backend
                 sh 'echo "Deployment complete."'
             }
         }
