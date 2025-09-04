@@ -24,7 +24,7 @@ pipeline {
             steps {
                 echo 'Deploy stage: Pretending to deploy the application...'
                 sh 'docker compose down backend'
-                sh 'docker compose up jenkins -d'
+                sh 'docker compose up backend -d'
                 sh 'echo "Deployment complete."'
             }
         }
