@@ -1,4 +1,4 @@
-# ./docker-compose.yml (포트 충돌 해결 버전)
+# ./docker-compose.yml (포트 충돌 해결 버전
 
 version: '3.8'
 
@@ -116,6 +116,7 @@ services:
   jenkins:
     build: ./jenkins
     container_name: jenkins-server
+    user: root  # <-- 권한 문제 해결
     hostname: jenkins-server
     ports:
       # Jenkins 포트는 충돌이 없으므로 그대로 8080 사용
@@ -123,6 +124,7 @@ services:
       - "50000:50000"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./jenkins_home:/var/jenkins_home # <-- Jenkins Job 데이터 영구 저장을 위해 이 라인 추가
     networks:
       - dev_net
       - internal_net
