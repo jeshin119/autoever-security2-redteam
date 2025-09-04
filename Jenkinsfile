@@ -1,6 +1,9 @@
 // Jenkinsfile 예제
 pipeline {
     agent any // 어떤 Jenkins 에이전트에서든 실행 가능
+    environment {
+        COMPOSE_PROJECT_NAME = 'mitre-project'
+    }
 
     stages {
         stage('Checkout') {
