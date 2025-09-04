@@ -23,7 +23,8 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploy stage: Pretending to deploy the application...'
-                sh 'docker compose up -d --force-recreate backend'
+                sh 'docker compose down backend'
+                sh 'docker compose up jenkins -d'
                 sh 'echo "Deployment complete."'
             }
         }
