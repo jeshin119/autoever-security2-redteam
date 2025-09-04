@@ -35,9 +35,9 @@ services:
     environment:
       - NODE_ENV=development
       - VITE_API_URL=${VITE_API_URL}
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+    # volumes:
+    #   - ./frontend:/app
+    #   - /app/node_modules
     depends_on:
       - backend
     networks:
