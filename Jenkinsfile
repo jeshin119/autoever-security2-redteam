@@ -1,26 +1,25 @@
-// Jenkinsfile 예제
 pipeline {
-    agent any // 어떤 Jenkins 에이전트에서든 실행 가능-
+    agent any
+
     environment {
         COMPOSE_PROJECT_NAME = 'mitre-project'
     }
 
     stages {
-        stage('Checkout') {
+        // 이 디버깅 단계를 추가했습니다.
+        stage('Debug Workspace') {
             steps {
-                echo 'Checking out code from Gitea...'
-                // Jenkins가 Gitea 저장소에서 코드를 가져옵니다.
-                // YOUR_GITEA_USERNAME을 실제 Gitea 사용자 이름으로 변경하세요.
-                git url: 'http://gitea-server:3000/team2/backend.git',
-                    branch: 'main'
+                echo 'Listing all files in the workspace...'
+                // 작업 공간의 모든 파일 목록을 자세히 출력합니다.
+                // 이 결과를 보면 package.json 파일의 존재 여부와 위치를 알 수 있습니다.
+                sh 'ls -al'
             }
         }
+
         stage('Build') {
             steps {
-                echo 'Build stage: Pretending to build the application...'
-                // 실제로는 여기에 'docker-compose build backend' 같은 명령어가 들어갑니다.
+                echo 'Building Docker Image...'
                 sh 'docker compose build backend'
-                sh 'echo "Build complete."'
             }
         }
         stage('Deploy') {
