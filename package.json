@@ -1,0 +1,56 @@
+{
+  "name": "vintage-market",
+  "version": "1.0.0",
+  "description": "Vintage Market - Educational Security Testing Platform",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "setup": "npm install && npm run setup:env && npm run setup:db",
+    "setup:env": "node scripts/setup-env.js",
+    "setup:db": "npm run db:seed --workspace=backend",
+    "dev": "node scripts/dev.js",
+    "start": "node scripts/start.js",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "backend": "npm run dev --workspace=backend",
+    "frontend": "npm run dev --workspace=frontend",
+    "db:seed": "npm run seed --workspace=backend",
+    "db:reset": "npm run clean:db && npm run db:seed",
+    "clean": "npm run clean:logs && npm run clean:uploads && npm run clean:db",
+    "clean:logs": "rm -rf logs backend/logs frontend/logs || true",
+    "clean:uploads": "rm -rf uploads backend/uploads || true",
+    "clean:db": "rm -rf database/*.sqlite backend/*.sqlite || true",
+    "docker:dev": "docker-compose up --build",
+    "docker:prod": "docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build",
+    "docker:down": "docker-compose down",
+    "docker:clean": "docker-compose down --volumes --remove-orphans",
+    "lint": "npm run lint --workspaces",
+    "format": "npm run format --workspaces",
+    "port:check": "node scripts/port-check.js",
+    "port:clean": "node scripts/port-clean.js"
+  },
+  "keywords": [
+    "security",
+    "vulnerable",
+    "marketplace",
+    "educational",
+    "owasp",
+    "monorepo"
+  ],
+  "author": "Security Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "axios": "^1.11.0",
+    "concurrently": "^8.2.0",
+    "cross-env": "^7.0.3",
+    "pm2": "^6.0.8",
+    "wait-on": "^7.0.1"
+  }
+}

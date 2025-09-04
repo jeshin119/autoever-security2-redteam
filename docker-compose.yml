@@ -1,0 +1,149 @@
+# ./docker-compose.yml (포트 충돌 해결 버전)
+
+version: '3.8'
+
+# 1. 네트워크 정의: DMZ, 내부망, 개발망
+networks:
+  dmz_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  internal_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+  dev_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/24
+
+# 2. 서비스(컨테이너) 정의
+services:
+  # --- DMZ 영역 ---
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+    container_name: vintage-market-frontend
+    ports:
+      # frontend 포트는 충돌이 없으므로 그대로 5173 사용
+      - "5173:5173"
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=${VITE_API_URL}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - dmz_net
+
+  backend:
+    build: ./backend
+    container_name: vintage-market-backend
+    ports:
+      # [수정] 충돌을 피하기 위해 호스트 포트를 3000 -> 3001로 변경
+      - "3001:3000"
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+      - DEBUG=*
+      - PORT=3000 # 컨테이너 내부 포트는 그대로 3000 사용
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=database
+      - FRONTEND_URL=${FRONTEND_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - database
+    networks:
+      - dmz_net
+      - internal_net
+
+  # --- 내부망(Internal) 영역 ---
+  database:
+    image: mysql:8.0
+    container_name: vintage-market-mysql
+    hostname: database
+    command: --default-authentication-plugin=mysql_native_password
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - internal_net
+
+  phpmyadmin:
+    image: linuxserver/phpmyadmin
+    container_name: vintage-market-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: database
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      # [수정] Jenkins와의 충돌을 피해 8081 포트로 명확히 지정
+      - "8081:80"
+    depends_on:
+      - database
+    networks:
+      - internal_net
+
+  user_pc:
+    build: ./user_pc
+    container_name: user-pc
+    hostname: user-pc
+    command: tail -f /dev/null
+    networks:
+      - internal_net
+
+  # --- 개발망(Dev) 영역 ---
+  jenkins:
+    build: ./jenkins
+    container_name: jenkins-server
+    hostname: jenkins-server
+    ports:
+      # Jenkins 포트는 충돌이 없으므로 그대로 8080 사용
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - dev_net
+      - internal_net
+
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea-server
+    hostname: gitea-server
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+    ports:
+      # [수정] 충돌을 피하기 위해 호스트 포트를 3000 -> 3002로 변경
+      - "3002:3000"
+    volumes:
+      - gitea_data:/data
+    networks:
+      - internal_net
+      - dev_net
+
+# 3. 볼륨 정의
+volumes:
+  mysql_data:
+  gitea_data:
