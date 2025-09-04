@@ -1,4 +1,4 @@
-# ./docker-compose.yml (포트 충돌 해결 버전)
+# ./docker-compose.yml (포트 충돌 해결 버전
 
 version: '3.8'
 
