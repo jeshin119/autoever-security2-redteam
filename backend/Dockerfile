@@ -11,9 +11,12 @@ RUN apk update && apk add --no-cache \
     make \
     g++ \
     curl
+RUN ls -al
 
 # 패키지 파일 복사
 COPY package*.json ./
+
+RUN ls -al
 
 # 의존성 설치
 RUN npm install
