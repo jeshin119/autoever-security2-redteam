@@ -29,7 +29,7 @@ pipeline {
                 sh 'docker compose down frontend'
                 sh 'docker compose up backend -d'
                 sh 'docker compose up frontend -d'
-                sh 'docker compose exec backend node src/scripts/seedData.js'
+                //sh 'docker compose exec backend node src/scripts/seedData.js'
                 sh 'echo "Deployment complete."'
             }
         }
