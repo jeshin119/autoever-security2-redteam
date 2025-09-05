@@ -67,7 +67,9 @@ Coupon.associate = function(models) {
   // Coupon has many UserCoupons
   Coupon.hasMany(models.UserCoupon, {
     foreignKey: 'coupon_id',
-    as: 'userCoupons'
+    as: 'userCoupons',
+    onDelete: 'CASCADE',   // 쿠폰 삭제 시 사용자 쿠폰도 함께 삭제
+    onUpdate: 'CASCADE'
   });
 };
 

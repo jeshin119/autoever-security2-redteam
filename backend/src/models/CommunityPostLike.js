@@ -15,7 +15,9 @@ const CommunityPostLike = sequelize.define('CommunityPostLike', {
     references: {
       model: User,
       key: 'id'
-    }
+    },
+    onDelete: 'CASCADE',   // 사용자 삭제 시 좋아요도 함께 삭제
+    onUpdate: 'CASCADE'
   },
   post_id: {
     type: DataTypes.INTEGER,
@@ -23,7 +25,9 @@ const CommunityPostLike = sequelize.define('CommunityPostLike', {
     references: {
       model: CommunityPost,
       key: 'id'
-    }
+    },
+    onDelete: 'CASCADE',   // 게시글 삭제 시 좋아요도 함께 삭제
+    onUpdate: 'CASCADE'
   }
 }, {
   tableName: 'community_post_likes',
@@ -56,7 +60,17 @@ const CommunityPostLike = sequelize.define('CommunityPostLike', {
 });
 
 // Define associations
-CommunityPostLike.belongsTo(User, { foreignKey: 'user_id', as: 'likeUser' });
-CommunityPostLike.belongsTo(CommunityPost, { foreignKey: 'post_id', as: 'likedPost' });
+CommunityPostLike.belongsTo(User, { 
+  foreignKey: 'user_id', 
+  as: 'likeUser',
+  onDelete: 'CASCADE',   // 사용자 삭제 시 좋아요도 함께 삭제
+  onUpdate: 'CASCADE'
+});
+CommunityPostLike.belongsTo(CommunityPost, { 
+  foreignKey: 'post_id', 
+  as: 'likedPost',
+  onDelete: 'CASCADE',   // 게시글 삭제 시 좋아요도 함께 삭제
+  onUpdate: 'CASCADE'
+});
 
 module.exports = CommunityPostLike;
