@@ -27,6 +27,10 @@ services:
     build:
       context: ./frontend
       target: development
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL}
+        - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+        - VITE_API_URL=${VITE_API_URL}
     container_name: vintage-market-frontend
     ports:
       # frontend 포트는 충돌이 없으므로 그대로 5173 사용

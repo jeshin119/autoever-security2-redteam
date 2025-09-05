@@ -14,8 +14,18 @@ RUN npm install
 # 소스 코드 복사
 COPY . .
 
+# 환경 변수를 빌드 시점에 전달하기 위한 ARG 선언
+ARG REACT_APP_API_URL
+ARG REACT_APP_BACKEND_URL
+ARG VITE_API_URL
+
+# 환경 변수 설정
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # 개발 서버 실행
-EXPOSE 3000
+EXPOSE 5173
 CMD ["npm", "run", "dev"]
 
 # Build stage

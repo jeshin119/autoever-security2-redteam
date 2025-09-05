@@ -71,12 +71,12 @@ app.locals.ejs = customEjs;
 app.locals.communityHelpers = customEjs.communityHelpers;
 
 const httpServer = createServer(app);
-const io = socketio(httpServer, {
-  cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true
-  }
-});
+// const io = socketio(httpServer, {
+//   cors: {
+//     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+//     credentials: true
+//   }
+// });
 
 // Connect to database and initialize models
 async function initializeApp() {
