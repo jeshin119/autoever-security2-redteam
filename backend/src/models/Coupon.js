@@ -27,14 +27,17 @@ const Coupon = sequelize.define('Coupon', {
   minOrderAmount: {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0,
+    field: 'min_order_amount'
   },
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
+    field: 'is_active'
   },
   expiresAt: {
     type: DataTypes.DATE,
     allowNull: true,
+    field: 'expires_at'
   },
   createdAt: {
     type: DataTypes.DATE,

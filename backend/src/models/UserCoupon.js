@@ -10,6 +10,7 @@ const UserCoupon = sequelize.define('UserCoupon', {
   userId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'user_id',
     references: {
       model: 'users',
       key: 'id'
@@ -18,6 +19,7 @@ const UserCoupon = sequelize.define('UserCoupon', {
   couponId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'coupon_id',
     references: {
       model: 'coupons',
       key: 'id'
@@ -26,10 +28,12 @@ const UserCoupon = sequelize.define('UserCoupon', {
   isUsed: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
+    field: 'is_used'
   },
   usedAt: {
     type: DataTypes.DATE,
     allowNull: true,
+    field: 'used_at'
   },
   createdAt: {
     type: DataTypes.DATE,

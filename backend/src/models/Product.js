@@ -81,10 +81,12 @@ const Product = sequelize.define('Product', {
   // Intentionally vulnerable fields
   sellerPhone: {
     type: DataTypes.STRING,
+    field: 'seller_phone'
     // Exposing personal contact
   },
   sellerEmail: {
     type: DataTypes.STRING,
+    field: 'seller_email'
     // Exposing personal email
   }
 }, {
