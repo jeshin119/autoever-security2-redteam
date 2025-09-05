@@ -33,6 +33,58 @@ const BannerContent = styled.div`
   text-align: center;
   color: white;
   padding: ${props => props.theme.spacing.xl};
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${props => props.theme.spacing.md};
+`;
+
+const CouponIcon = styled.div`
+  font-size: 4rem;
+  margin-bottom: ${props => props.theme.spacing.sm};
+  
+  @media (max-width: ${props => props.theme.breakpoints.md}) {
+    font-size: 3rem;
+  }
+`;
+
+const CouponCards = styled.div`
+  display: flex;
+  gap: ${props => props.theme.spacing.md};
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: ${props => props.theme.spacing.md} 0;
+  
+  @media (max-width: ${props => props.theme.breakpoints.sm}) {
+    flex-direction: column;
+    gap: ${props => props.theme.spacing.sm};
+  }
+`;
+
+const MiniCouponCard = styled.div`
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 2px dashed rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
+  font-size: 0.9rem;
+  font-weight: 600;
+  position: relative;
+  
+  &::before {
+    content: '🎫';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 1.2rem;
+    background: rgba(255, 255, 255, 0.9);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 `;
 
 const BannerTitle = styled.h2`
@@ -88,10 +140,10 @@ const Indicator = styled.button`
 const banners = [
   {
     id: 1,
-    title: '🎉 신규 회원 특별 혜택',
-    subtitle: '지금 가입하고 5,000 포인트 받으세요!',
+    title: '🎉 신규회원 특별혜택 쿠폰지급',
+    subtitle: '지금 가입하고 즉시 사용 가능한 할인쿠폰을 받아보세요!',
     link: '/register',
-    buttonText: '회원가입',
+    buttonText: '🎁 지금 가입하고 쿠폰 받기',
     gradient: ['#FF6B6B', '#4ECDC4'],
   },
   {
@@ -140,8 +192,17 @@ const Banner = () => {
           gradient={banner.gradient}
         >
           <BannerContent>
+            {banner.id === 1 && (
+              <CouponIcon>🎉</CouponIcon>
+            )}
             <BannerTitle>{banner.title}</BannerTitle>
             <BannerSubtitle>{banner.subtitle}</BannerSubtitle>
+            {banner.id === 1 && (
+              <CouponCards>
+                <MiniCouponCard>10% OFF</MiniCouponCard>
+                <MiniCouponCard>5,000원</MiniCouponCard>
+              </CouponCards>
+            )}
             <BannerButton to={banner.link}>
               {banner.buttonText}
             </BannerButton>
