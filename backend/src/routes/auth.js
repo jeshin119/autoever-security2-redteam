@@ -119,7 +119,7 @@ router.post('/register', async (req, res) => {
 router.get('/me', async (req, res) => {
   try {
     // Intentionally weak authentication check
-    const token = req.headers.authorization?.split(' ')[1];
+    const token = req.headers.authorization && req.headers.authorization.split(' ')[1];
     
     if (!token) {
       return res.status(401).json({
