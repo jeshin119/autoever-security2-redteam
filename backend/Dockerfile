@@ -1,12 +1,18 @@
 FROM ubuntu:18.04
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y \
+# 🔑 bionic 저장소를 다른 미러로 강제 변경 (working alternatives)
+RUN echo "deb http://mirror.kakao.com/ubuntu/ bionic main restricted universe multiverse" > /etc/apt/sources.list \
+ && echo "deb http://mirror.kakao.com/ubuntu/ bionic-updates main restricted universe multiverse" >> /etc/apt/sources.list \
+ && echo "deb http://mirror.kakao.com/ubuntu/ bionic-backports main restricted universe multiverse" >> /etc/apt/sources.list \
+ && echo "deb http://mirror.kakao.com/ubuntu/ bionic-security main restricted universe multiverse" >> /etc/apt/sources.list \
+ && apt-get update && apt-get install -y \
     curl \
     sudo \
     python3 \
     build-essential \
-    && rm -rf /var/lib/apt/lists/*
+ && rm -rf /var/lib/apt/lists/*
+
 RUN useradd -m server && \
     echo "server:123456" | chpasswd && \
     echo 'server ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
@@ -25,6 +31,7 @@ RUN bash -c "source $NVM_DIR/nvm.sh && \
     nvm install $NODE_VERSION && \
     nvm alias default $NODE_VERSION && \
     nvm use default"
+
 COPY --chown=server:server package*.json ./
 RUN npm install
 RUN npm install -g pm2
@@ -36,4 +43,5 @@ EXPOSE 5000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:5000/api/health || exit 1
+
 CMD ["npm", "run", "dev"]
