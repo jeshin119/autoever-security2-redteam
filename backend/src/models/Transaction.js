@@ -83,13 +83,13 @@ Transaction.associate = function(models) {
   // Transaction belongs to User (buyer)
   Transaction.belongsTo(models.User, {
     foreignKey: 'buyerId',
-    as: 'Buyer'
+    as: 'TransactionBuyer'
   });
   
   // Transaction belongs to User (seller)
   Transaction.belongsTo(models.User, {
     foreignKey: 'sellerId',
-    as: 'Seller'
+    as: 'TransactionSeller'
   });
 };
 

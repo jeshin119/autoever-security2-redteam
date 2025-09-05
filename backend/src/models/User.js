@@ -148,8 +148,8 @@ User.associate = function(models) {
   // User has many Comments
   if (models.Comment) {
     User.hasMany(models.Comment, {
-      foreignKey: 'userId',
-      as: 'Comments'
+      foreignKey: 'user_id',
+      as: 'UserComments'
     });
   }
 };

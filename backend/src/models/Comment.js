@@ -43,12 +43,11 @@ const Comment = sequelize.define('Comment', {
 });
 
 // Define associations
-Comment.belongsTo(User, { foreignKey: 'user_id', as: 'author' });
-Comment.belongsTo(CommunityPost, { foreignKey: 'post_id', as: 'post' });
+Comment.belongsTo(User, { foreignKey: 'user_id', as: 'commentAuthor' });
+Comment.belongsTo(CommunityPost, { foreignKey: 'post_id', as: 'relatedPost' });
 Comment.belongsTo(Comment, { foreignKey: 'parent_id', as: 'parent' });
 Comment.hasMany(Comment, { foreignKey: 'parent_id', as: 'replies' });
 
-User.hasMany(Comment, { foreignKey: 'user_id' });
-// CommunityPost.hasMany(Comment, { foreignKey: 'post_id' }); // 이 관계는 CommunityPost 모델에서 정의
+// User와 CommunityPost 연관관계는 각각의 모델에서 정의됨
 
 module.exports = Comment;

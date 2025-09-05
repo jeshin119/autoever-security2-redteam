@@ -38,7 +38,7 @@ const CommunityPostLike = sequelize.define('CommunityPostLike', {
 });
 
 // Define associations
-CommunityPostLike.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-CommunityPostLike.belongsTo(CommunityPost, { foreignKey: 'post_id', as: 'post' });
+CommunityPostLike.belongsTo(User, { foreignKey: 'user_id', as: 'likeUser' });
+CommunityPostLike.belongsTo(CommunityPost, { foreignKey: 'post_id', as: 'likedPost' });
 
 module.exports = CommunityPostLike;
