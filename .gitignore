@@ -85,3 +85,5 @@ temp/
 .cursor
 claude.md
 .claude
+package.json
+package-lock.json
