@@ -132,6 +132,7 @@ User.associate = function(models) {
   
   // User has many CommunityPosts
   if (models.CommunityPost) {
+    console.log(`[DEBUG] User.associate가 호출되었습니다. Timestamp: ${new Date().getTime()}`);
     User.hasMany(models.CommunityPost, {
       foreignKey: 'userId',
       as: 'CommunityPosts'
