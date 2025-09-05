@@ -373,8 +373,8 @@ const PurchaseModal = ({
 }) => {
   // 구매 폼 상태
   const [deliveryInfo, setDeliveryInfo] = useState({
-    recipientName: currentUser?.name || '',
-    phone: currentUser?.phone || '',
+    recipientName: (currentUser && currentUser.name) || '',
+    phone: (currentUser && currentUser.phone) || '',
     zipCode: '',
     address: '',
     detailAddress: '',

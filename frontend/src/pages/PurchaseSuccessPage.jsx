@@ -577,7 +577,7 @@ const PurchaseSuccessPage = function() {
             
             <PaymentRow>
               <span>상품 금액</span>
-              <span>{formatPrice(transaction.productPrice || product?.price)}</span>
+              <span>{formatPrice(transaction.productPrice || (product && product.price))}</span>
             </PaymentRow>
             
             <PaymentRow>
