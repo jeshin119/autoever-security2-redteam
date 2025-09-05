@@ -1,5 +1,5 @@
 -- Vintage Market Database Schema
--- 취약한 중고거래 플랫폼 데이터베이스 스키마 (보안 실습용)
+-- 중고거래 플랫폼 데이터베이스 스키마
 
 CREATE DATABASE IF NOT EXISTS vintage_market;
 USE vintage_market;
