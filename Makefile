@@ -1,6 +1,8 @@
-.PHONY: help setup dev start build clean test lint format docker-dev docker-prod docker-down
+.PHONY: help setup dev dev-npm prod start build clean test lint format docker-dev docker-prod docker-down
 
 # Default target
+.DEFAULT_GOAL := prod
+
 help: ## Show this help message
 	@echo "Vintage Market - Development Commands"
 	@echo "====================================="
@@ -12,9 +14,9 @@ setup: ## Setup development environment
 	@npm install
 	@npm run setup
 
-# Development
-dev: ## Start development servers (backend + frontend)
-	@echo "🛠️ Starting development environment..."
+# Development (npm-based)
+dev-npm: ## Start development servers with npm (backend + frontend)
+	@echo "🛠️ Starting development environment with npm..."
 	@npm run dev
 
 backend: ## Start backend only
@@ -56,10 +58,28 @@ test: ## Run tests in all workspaces
 	@npm test
 
 # Docker
-docker-dev: ## Start development environment with Docker
+dev: ## Start development environment with Docker (localhost URLs)
+	@echo "🛠️ Starting development environment with localhost URLs..."
+	@cp .env.dev .env
+	@docker-compose up --build -d frontend backend database phpmyadmin
+	@echo "✅ Development environment started!"
+	@echo "Frontend: http://localhost:5173"
+	@echo "Backend: http://localhost:3001"
+	@echo "phpMyAdmin: http://localhost:8081"
+
+prod: ## Start production environment with Docker (192.168.201.102 URLs)
+	@echo "🚀 Starting production environment with 192.168.201.102 URLs..."
+	@cp .env.prod .env
+	@docker-compose up --build -d frontend backend database phpmyadmin
+	@echo "✅ Production environment started!"
+	@echo "Frontend: http://192.168.201.102:5173"
+	@echo "Backend: http://192.168.201.102:3001"
+	@echo "phpMyAdmin: http://192.168.201.102:8081"
+
+docker-dev: ## Start development environment with Docker (legacy)
 	@docker-compose up --build
 
-docker-prod: ## Start production environment with Docker  
+docker-prod: ## Start production environment with Docker (legacy)
 	@docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 
 docker-down: ## Stop Docker containers
