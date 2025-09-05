@@ -14,7 +14,9 @@ const CommunityPost = sequelize.define('CommunityPost', {
     references: {
       model: User,
       key: 'id'
-    }
+    },
+    onDelete: 'RESTRICT',  // 사용자에게 게시글이 있으면 삭제 방지
+    onUpdate: 'CASCADE'    // 사용자 ID 변경 시 연쇄 업데이트
   },
   title: {
     type: DataTypes.STRING,
@@ -71,7 +73,12 @@ const CommunityPost = sequelize.define('CommunityPost', {
 });
 
 // Define associations
-CommunityPost.belongsTo(User, { foreignKey: 'user_id', as: 'author' });
+CommunityPost.belongsTo(User, { 
+  foreignKey: 'user_id', 
+  as: 'author',
+  onDelete: 'RESTRICT',  // 사용자에게 게시글이 있으면 삭제 방지
+  onUpdate: 'CASCADE'
+});
 
 // CommunityPost has many Comments
 CommunityPost.associate = function(models) {

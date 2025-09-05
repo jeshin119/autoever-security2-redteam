@@ -121,7 +121,9 @@ User.associate = function(models) {
   if (models.Product) {
     User.hasMany(models.Product, {
       foreignKey: 'seller_id',
-      as: 'Products'
+      as: 'Products',
+      onDelete: 'RESTRICT',  // 사용자에게 상품이 있으면 삭제 방지
+      onUpdate: 'CASCADE'
     });
   }
   
@@ -129,13 +131,17 @@ User.associate = function(models) {
   if (models.Transaction) {
     User.hasMany(models.Transaction, {
       foreignKey: 'buyer_id',
-      as: 'PurchasedTransactions'
+      as: 'PurchasedTransactions',
+      onDelete: 'RESTRICT',  // 사용자에게 거래가 있으면 삭제 방지
+      onUpdate: 'CASCADE'
     });
     
     // User has many Transactions (as seller)
     User.hasMany(models.Transaction, {
       foreignKey: 'seller_id',
-      as: 'SoldTransactions'
+      as: 'SoldTransactions',
+      onDelete: 'RESTRICT',  // 사용자에게 거래가 있으면 삭제 방지
+      onUpdate: 'CASCADE'
     });
   }
   
@@ -143,7 +149,9 @@ User.associate = function(models) {
   if (models.UserCoupon) {
     User.hasMany(models.UserCoupon, {
       foreignKey: 'user_id',
-      as: 'UserCoupons'
+      as: 'UserCoupons',
+      onDelete: 'RESTRICT',  // 사용자에게 쿠폰이 있으면 삭제 방지
+      onUpdate: 'CASCADE'
     });
   }
   
@@ -151,7 +159,9 @@ User.associate = function(models) {
   if (models.UserLikes) {
     User.hasMany(models.UserLikes, {
       foreignKey: 'user_id',
-      as: 'UserLikes'
+      as: 'UserLikes',
+      onDelete: 'CASCADE',   // 사용자 삭제 시 좋아요도 함께 삭제
+      onUpdate: 'CASCADE'
     });
   }
   
@@ -159,7 +169,9 @@ User.associate = function(models) {
   if (models.CommunityPost) {
     User.hasMany(models.CommunityPost, {
       foreignKey: 'user_id',
-      as: 'CommunityPosts'
+      as: 'CommunityPosts',
+      onDelete: 'RESTRICT',  // 사용자에게 게시글이 있으면 삭제 방지
+      onUpdate: 'CASCADE'
     });
   }
   
@@ -167,7 +179,9 @@ User.associate = function(models) {
   if (models.Comment) {
     User.hasMany(models.Comment, {
       foreignKey: 'user_id',
-      as: 'UserComments'
+      as: 'UserComments',
+      onDelete: 'RESTRICT',  // 사용자에게 댓글이 있으면 삭제 방지
+      onUpdate: 'CASCADE'
     });
   }
 };

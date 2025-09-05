@@ -15,6 +15,8 @@ const UserCoupon = sequelize.define('UserCoupon', {
       model: 'users',
       key: 'id'
     },
+    onDelete: 'RESTRICT',  // 사용자에게 쿠폰이 있으면 삭제 방지
+    onUpdate: 'CASCADE'    // 사용자 ID 변경 시 연쇄 업데이트
   },
   couponId: {
     type: DataTypes.INTEGER,
@@ -24,6 +26,8 @@ const UserCoupon = sequelize.define('UserCoupon', {
       model: 'coupons',
       key: 'id'
     },
+    onDelete: 'CASCADE',   // 쿠폰 삭제 시 사용자 쿠폰도 함께 삭제
+    onUpdate: 'CASCADE'    // 쿠폰 ID 변경 시 연쇄 업데이트
   },
   isUsed: {
     type: DataTypes.BOOLEAN,
@@ -69,13 +73,17 @@ UserCoupon.associate = function(models) {
   // UserCoupon belongs to User
   UserCoupon.belongsTo(models.User, {
     foreignKey: 'user_id',
-    as: 'couponOwner'
+    as: 'couponOwner',
+    onDelete: 'RESTRICT',  // 사용자에게 쿠폰이 있으면 삭제 방지
+    onUpdate: 'CASCADE'
   });
   
   // UserCoupon belongs to Coupon
   UserCoupon.belongsTo(models.Coupon, {
     foreignKey: 'coupon_id',
-    as: 'coupon'
+    as: 'coupon',
+    onDelete: 'CASCADE',   // 쿠폰 삭제 시 사용자 쿠폰도 함께 삭제
+    onUpdate: 'CASCADE'
   });
 };
 

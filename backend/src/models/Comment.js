@@ -15,7 +15,9 @@ const Comment = sequelize.define('Comment', {
     references: {
       model: CommunityPost,
       key: 'id'
-    }
+    },
+    onDelete: 'CASCADE',   // 게시글 삭제 시 댓글도 함께 삭제
+    onUpdate: 'CASCADE'
   },
   user_id: {
     type: DataTypes.INTEGER,
@@ -23,7 +25,9 @@ const Comment = sequelize.define('Comment', {
     references: {
       model: User,
       key: 'id'
-    }
+    },
+    onDelete: 'RESTRICT',  // 사용자에게 댓글이 있으면 삭제 방지
+    onUpdate: 'CASCADE'
   },
   content: {
     type: DataTypes.TEXT,
@@ -35,7 +39,9 @@ const Comment = sequelize.define('Comment', {
     references: {
       model: 'community_comments',
       key: 'id'
-    }
+    },
+    onDelete: 'CASCADE',   // 부모 댓글 삭제 시 자식 댓글도 함께 삭제
+    onUpdate: 'CASCADE'
   }
 }, {
   tableName: 'community_comments',
@@ -61,10 +67,30 @@ const Comment = sequelize.define('Comment', {
 });
 
 // Define associations
-Comment.belongsTo(User, { foreignKey: 'user_id', as: 'commentAuthor' });
-Comment.belongsTo(CommunityPost, { foreignKey: 'post_id', as: 'relatedPost' });
-Comment.belongsTo(Comment, { foreignKey: 'parent_id', as: 'parent' });
-Comment.hasMany(Comment, { foreignKey: 'parent_id', as: 'replies' });
+Comment.belongsTo(User, { 
+  foreignKey: 'user_id', 
+  as: 'commentAuthor',
+  onDelete: 'RESTRICT',  // 사용자에게 댓글이 있으면 삭제 방지
+  onUpdate: 'CASCADE'
+});
+Comment.belongsTo(CommunityPost, { 
+  foreignKey: 'post_id', 
+  as: 'relatedPost',
+  onDelete: 'CASCADE',   // 게시글 삭제 시 댓글도 함께 삭제
+  onUpdate: 'CASCADE'
+});
+Comment.belongsTo(Comment, { 
+  foreignKey: 'parent_id', 
+  as: 'parent',
+  onDelete: 'CASCADE',   // 부모 댓글 삭제 시 자식 댓글도 함께 삭제
+  onUpdate: 'CASCADE'
+});
+Comment.hasMany(Comment, { 
+  foreignKey: 'parent_id', 
+  as: 'replies',
+  onDelete: 'CASCADE',   // 부모 댓글 삭제 시 자식 댓글도 함께 삭제
+  onUpdate: 'CASCADE'
+});
 
 // User와 CommunityPost 연관관계는 각각의 모델에서 정의됨
 
