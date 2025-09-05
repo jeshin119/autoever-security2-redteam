@@ -76,19 +76,19 @@ const Transaction = sequelize.define('Transaction', {
 Transaction.associate = function(models) {
   // Transaction belongs to Product
   Transaction.belongsTo(models.Product, {
-    foreignKey: 'productId',
+    foreignKey: 'product_id',
     as: 'Product'
   });
   
   // Transaction belongs to User (buyer)
   Transaction.belongsTo(models.User, {
-    foreignKey: 'buyerId',
+    foreignKey: 'buyer_id',
     as: 'TransactionBuyer'
   });
   
   // Transaction belongs to User (seller)
   Transaction.belongsTo(models.User, {
-    foreignKey: 'sellerId',
+    foreignKey: 'seller_id',
     as: 'TransactionSeller'
   });
 };

@@ -7,12 +7,12 @@ const UserLikes = sequelize.define('UserLikes', {
     primaryKey: true,
     autoIncrement: true
   },
-  userId: {
+  user_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     // Intentionally no foreign key constraint
   },
-  productId: {
+  product_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     // Intentionally no foreign key constraint
@@ -23,6 +23,19 @@ const UserLikes = sequelize.define('UserLikes', {
   // Intentionally no validation hooks
 });
 
-// 관계는 associations.js에서 정의됩니다
+// Set up associations
+UserLikes.associate = function(models) {
+  // UserLikes belongs to User
+  UserLikes.belongsTo(models.User, {
+    foreignKey: 'user_id',
+    as: 'likedByUser'
+  });
+  
+  // UserLikes belongs to Product
+  UserLikes.belongsTo(models.Product, {
+    foreignKey: 'product_id',
+    as: 'product'
+  });
+};
 
 module.exports = UserLikes;

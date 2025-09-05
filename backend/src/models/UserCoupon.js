@@ -35,23 +35,30 @@ const UserCoupon = sequelize.define('UserCoupon', {
     allowNull: true,
     field: 'used_at'
   },
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
-  updatedAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
 }, {
   tableName: 'user_coupons',
   timestamps: true,
   indexes: [
     {
       unique: true,
-      fields: ['userId', 'couponId']
+      fields: ['user_id', 'coupon_id']
     }
   ],
 });
+
+// Set up associations
+UserCoupon.associate = function(models) {
+  // UserCoupon belongs to User
+  UserCoupon.belongsTo(models.User, {
+    foreignKey: 'user_id',
+    as: 'couponOwner'
+  });
+  
+  // UserCoupon belongs to Coupon
+  UserCoupon.belongsTo(models.Coupon, {
+    foreignKey: 'coupon_id',
+    as: 'coupon'
+  });
+};
 
 module.exports = UserCoupon;

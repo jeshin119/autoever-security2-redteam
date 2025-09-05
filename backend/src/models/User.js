@@ -102,7 +102,7 @@ User.associate = function(models) {
   // User has many Products (as seller)
   if (models.Product) {
     User.hasMany(models.Product, {
-      foreignKey: 'userId',
+      foreignKey: 'seller_id',
       as: 'Products'
     });
   }
@@ -110,13 +110,13 @@ User.associate = function(models) {
   // User has many Transactions (as buyer)
   if (models.Transaction) {
     User.hasMany(models.Transaction, {
-      foreignKey: 'buyerId',
+      foreignKey: 'buyer_id',
       as: 'PurchasedTransactions'
     });
     
     // User has many Transactions (as seller)
     User.hasMany(models.Transaction, {
-      foreignKey: 'sellerId',
+      foreignKey: 'seller_id',
       as: 'SoldTransactions'
     });
   }
@@ -124,7 +124,7 @@ User.associate = function(models) {
   // User has many UserCoupons
   if (models.UserCoupon) {
     User.hasMany(models.UserCoupon, {
-      foreignKey: 'userId',
+      foreignKey: 'user_id',
       as: 'UserCoupons'
     });
   }
@@ -132,7 +132,7 @@ User.associate = function(models) {
   // User has many UserLikes
   if (models.UserLikes) {
     User.hasMany(models.UserLikes, {
-      foreignKey: 'userId',
+      foreignKey: 'user_id',
       as: 'UserLikes'
     });
   }

@@ -99,19 +99,19 @@ const Product = sequelize.define('Product', {
 Product.associate = function(models) {
   // Product has many Transactions
   Product.hasMany(models.Transaction, {
-    foreignKey: 'productId',
+    foreignKey: 'product_id',
     as: 'Transactions'
   });
   
   // Product belongs to User (seller)
   Product.belongsTo(models.User, {
-    foreignKey: 'userId',
+    foreignKey: 'seller_id',
     as: 'ProductSeller'
   });
   
   // Product belongs to User (buyer) - only for sold products
   Product.belongsTo(models.User, {
-    foreignKey: 'buyerId',
+    foreignKey: 'buyer_id',
     as: 'ProductBuyer'
   });
 };

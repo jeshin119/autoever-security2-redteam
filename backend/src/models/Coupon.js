@@ -39,17 +39,18 @@ const Coupon = sequelize.define('Coupon', {
     allowNull: true,
     field: 'expires_at'
   },
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
-  updatedAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
 }, {
   tableName: 'coupons',
   timestamps: true,
 });
+
+// Set up associations  
+Coupon.associate = function(models) {
+  // Coupon has many UserCoupons
+  Coupon.hasMany(models.UserCoupon, {
+    foreignKey: 'coupon_id',
+    as: 'userCoupons'
+  });
+};
 
 module.exports = Coupon;
