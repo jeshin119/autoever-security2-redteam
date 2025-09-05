@@ -8,7 +8,7 @@ const authService = {
       const response = await api.post('/auth/login', credentials);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      throw (error.response && error.response.data) || error;
     }
   },
 
@@ -19,7 +19,7 @@ const authService = {
       const response = await api.post('/auth/register', userData);
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      throw (error.response && error.response.data) || error;
     }
   },
 
@@ -29,7 +29,7 @@ const authService = {
       const response = await api.get('/auth/me');
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      throw (error.response && error.response.data) || error;
     }
   },
 
@@ -39,7 +39,7 @@ const authService = {
       const response = await api.post('/auth/logout');
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      throw (error.response && error.response.data) || error;
     }
   },
 
@@ -50,7 +50,7 @@ const authService = {
       const response = await api.post('/auth/reset-password', { email });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      throw (error.response && error.response.data) || error;
     }
   },
 
@@ -64,7 +64,7 @@ const authService = {
       });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      throw (error.response && error.response.data) || error;
     }
   },
 
@@ -75,7 +75,7 @@ const authService = {
       const response = await api.post(`/auth/${provider}`, { token });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      throw (error.response && error.response.data) || error;
     }
   },
 };

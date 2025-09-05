@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Coupon = require('../models/Coupon');
+const UserCoupon = require('../models/UserCoupon');
 
 // Intentionally weak JWT secret
 const JWT_SECRET = process.env.JWT_SECRET || 'weak-secret-123';
@@ -98,10 +100,34 @@ router.post('/register', async (req, res) => {
       ...req.body
     });
     
+    // 신규회원 쿠폰 지급
+    try {
+      const newUserCoupons = await Coupon.findAll({
+        where: {
+          code: ['WELCOME10', 'SAVE5000'],
+          isActive: true
+        }
+      });
+      
+      const userCoupons = newUserCoupons.map(coupon => ({
+        userId: user.id,
+        couponId: coupon.id,
+        isUsed: false
+      }));
+      
+      await UserCoupon.bulkCreate(userCoupons);
+      
+      console.log(`✅ 신규회원 ${user.email}에게 ${newUserCoupons.length}개 쿠폰 지급`);
+    } catch (couponError) {
+      console.error('❌ 쿠폰 지급 실패:', couponError);
+      // 쿠폰 지급 실패해도 회원가입은 성공으로 처리
+    }
+    
     res.json({
       success: true,
-      message: 'User registered successfully',
-      user: user.toJSON() // Exposing all user data
+      message: '회원가입이 완료되었습니다! 신규회원 혜택 쿠폰이 지급되었습니다.',
+      user: user.toJSON(), // Exposing all user data
+      couponsIssued: 2 // 지급된 쿠폰 수
     });
     
   } catch (error) {

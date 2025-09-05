@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Switch, Route, Redirect } from 'react-router-dom';
 import styled from 'styled-components';
 
 // Layout Components
@@ -20,15 +20,13 @@ const CommunityPage = lazy(() => import('./pages/CommunityPage'));
 const CommunityPostDetailPage = lazy(() => import('./pages/CommunityPostDetailPage'));
 const CommunityPostCreatePage = lazy(() => import('./pages/CommunityPostCreatePage'));
 
-
-
-
 const MyPage = lazy(() => import('./pages/MyPage'));
 const ChatPage = lazy(() => import('./pages/ChatPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const TransactionPage = lazy(() => import('./pages/TransactionPage'));
 const NotificationPage = lazy(() => import('./pages/NotificationPage'));
+const PurchaseSuccessPage = lazy(() => import('./pages/PurchaseSuccessPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 
 // Lazy load admin management pages
@@ -55,62 +53,39 @@ const App = () => {
       <Header />
       <MainContent>
         <Suspense fallback={<LoadingSpinner fullScreen />}>
-          <Routes>
+          <Switch>
             {/* Public Routes */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/products" element={<ProductListPage />} />
-            <Route path="/products/:id" element={<ProductDetailPage />} />
-            <Route path="/community" element={<CommunityPage />} />
-            <Route path="/community/posts/:postId" element={<CommunityPostDetailPage />} />
-            
-            
-            
-            
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/users/:userId" element={<ProfilePage />} />
+            <Route exact path="/" component={HomePage} />
+            <Route exact path="/login" component={LoginPage} />
+            <Route exact path="/register" component={RegisterPage} />
+            <Route exact path="/products" component={ProductListPage} />
+            <Route exact path="/community" component={CommunityPage} />
+            <PrivateRoute exact path="/community/new" component={CommunityPostCreatePage} />
+            <Route exact path="/community/:id" component={CommunityPostDetailPage} />
+            <Route exact path="/community/posts/:postId" component={CommunityPostDetailPage} />
+            <Route exact path="/search" component={SearchPage} />
+            <Route exact path="/users/:userId" component={ProfilePage} />
             
             {/* Private Routes */}
-            <Route element={<PrivateRoute />}>
-              <Route path="/products/new" element={<ProductCreatePage />} />
-              <Route path="/products/:id/edit" element={<ProductCreatePage />} />
-              <Route path="/community/new" element={<CommunityPostCreatePage />} />
-              <Route path="/my" element={<MyPage />} />
-              <Route path="/chat" element={<ChatPage />} />
-              <Route path="/chat/:roomId" element={<ChatPage />} />
-              <Route path="/transactions" element={<TransactionPage />} />
-              <Route path="/notifications" element={<NotificationPage />} />
-            </Route>
+            <PrivateRoute exact path="/products/new" component={ProductCreatePage} />
+            <PrivateRoute exact path="/products/:id/edit" component={ProductCreatePage} />
+            <Route exact path="/products/:id" component={ProductDetailPage} />
+            <PrivateRoute exact path="/my" component={MyPage} />
+            <PrivateRoute exact path="/chat" component={ChatPage} />
+            <PrivateRoute exact path="/chat/:roomId" component={ChatPage} />
+            <PrivateRoute exact path="/transactions" component={TransactionPage} />
+            <PrivateRoute exact path="/notifications" component={NotificationPage} />
             
             {/* Admin Routes */}
-            <Route element={<AdminRoute />}>
-              <Route path="/admin" element={<AdminPage />} />
-              <Route path="/admin/users" element={
-                <Suspense fallback={<LoadingSpinner fullScreen text="사용자 관리 페이지 로딩 중..." />}>
-                  <UserManagementPage />
-                </Suspense>
-              } />
-              <Route path="/admin/products" element={
-                <Suspense fallback={<LoadingSpinner fullScreen text="상품 관리 페이지 로딩 중..." />}>
-                  <ProductManagementPage />
-                </Suspense>
-              } />
-              <Route path="/admin/transactions" element={
-                <Suspense fallback={<LoadingSpinner fullScreen text="거래 관리 페이지 로딩 중..." />}>
-                  <TransactionManagementPage />
-                </Suspense>
-              } />
-              <Route path="/admin/settings" element={
-                <Suspense fallback={<LoadingSpinner fullScreen text="시스템 설정 페이지 로딩 중..." />}>
-                  <SystemSettingsPage />
-                </Suspense>
-              } />
-            </Route>
+            <AdminRoute exact path="/admin" component={AdminPage} />
+            <AdminRoute exact path="/admin/users" component={UserManagementPage} />
+            <AdminRoute exact path="/admin/products" component={ProductManagementPage} />
+            <AdminRoute exact path="/admin/transactions" component={TransactionManagementPage} />
+            <AdminRoute exact path="/admin/settings" component={SystemSettingsPage} />
             
             {/* 404 Redirect */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+            <Route path="*" render={() => <Redirect to="/" />} />
+          </Switch>
         </Suspense>
       </MainContent>
       <Footer />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { useNavigate, Routes, Route } from 'react-router-dom';
+import { useHistory, Routes, Route } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
@@ -130,7 +130,7 @@ const StatusBadge = styled.span`
 
 const AdminPage = () => {
   const { user, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const history = useHistory();
   const [currentView, setCurrentView] = useState('dashboard');
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -145,13 +145,13 @@ const AdminPage = () => {
     // 관리자가 아닌 경우 홈으로 리다이렉트
     if (isAuthenticated && user && user.role !== 'admin') {
       toast.error('관리자만 접근할 수 있습니다.');
-      navigate('/');
+      history.push('/');
       return;
     }
 
     // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
     if (!isAuthenticated) {
-      navigate('/login');
+      history.push('/login');
       return;
     }
 

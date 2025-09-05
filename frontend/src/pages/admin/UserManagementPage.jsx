@@ -500,7 +500,7 @@ const UserManagementPage = ({ onBack }) => {
               <Label>이름</Label>
               <Input
                 type="text"
-                value={editingUser?.name || ''}
+                value={(editingUser && editingUser.name) || ''}
                 onChange={(e) => setEditingUser({...editingUser, name: e.target.value})}
               />
             </FormGroup>
@@ -509,7 +509,7 @@ const UserManagementPage = ({ onBack }) => {
               <Label>이메일</Label>
               <Input
                 type="email"
-                value={editingUser?.email || ''}
+                value={(editingUser && editingUser.email) || ''}
                 onChange={(e) => setEditingUser({...editingUser, email: e.target.value})}
               />
             </FormGroup>
@@ -518,7 +518,7 @@ const UserManagementPage = ({ onBack }) => {
               <Label>전화번호</Label>
               <Input
                 type="text"
-                value={editingUser?.phone || ''}
+                value={(editingUser && editingUser.phone) || ''}
                 onChange={(e) => setEditingUser({...editingUser, phone: e.target.value})}
               />
             </FormGroup>
@@ -526,7 +526,7 @@ const UserManagementPage = ({ onBack }) => {
             <FormGroup>
               <Label>역할</Label>
               <Select
-                value={editingUser?.role || 'user'}
+                value={(editingUser && editingUser.role) || 'user'}
                 onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
               >
                 <option value="user">일반 사용자</option>
@@ -537,7 +537,7 @@ const UserManagementPage = ({ onBack }) => {
             <FormGroup>
               <Label>상태</Label>
               <Select
-                value={editingUser?.status || 'active'}
+                value={(editingUser && editingUser.status) || 'active'}
                 onChange={(e) => setEditingUser({...editingUser, status: e.target.value})}
               >
                 <option value="active">활성</option>
@@ -553,7 +553,7 @@ const UserManagementPage = ({ onBack }) => {
                 min="0"
                 max="100"
                 step="0.1"
-                value={editingUser?.mannerScore || 0}
+                value={(editingUser && editingUser.mannerScore) || 0}
                 onChange={(e) => setEditingUser({...editingUser, mannerScore: parseFloat(e.target.value)})}
               />
             </FormGroup>

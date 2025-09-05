@@ -6,7 +6,7 @@ export const getProducts = async (params = {}) => {
     const response = await api.get('/products', { params });
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    throw (error.response && error.response.data) || error;
   }
 };
 
@@ -16,7 +16,7 @@ export const getProduct = async (id) => {
     const response = await api.get(`/products/${id}`);
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    throw (error.response && error.response.data) || error;
   }
 };
 
@@ -26,7 +26,7 @@ export const createProduct = async (productData) => {
     const response = await api.post('/products', productData);
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    throw (error.response && error.response.data) || error;
   }
 };
 
@@ -36,7 +36,7 @@ export const updateProduct = async (id, productData) => {
     const response = await api.put(`/products/${id}`, productData);
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    throw (error.response && error.response.data) || error;
   }
 };
 
@@ -46,7 +46,7 @@ export const deleteProduct = async (id) => {
     const response = await api.delete(`/products/${id}`);
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    throw (error.response && error.response.data) || error;
   }
 };
 
@@ -56,7 +56,7 @@ export const searchProducts = async (query) => {
     const response = await api.get(`/products/search?q=${query}`);
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    throw (error.response && error.response.data) || error;
   }
 };
 
@@ -73,7 +73,7 @@ export const uploadProductImage = async (file) => {
     });
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    throw (error.response && error.response.data) || error;
   }
 };
 
@@ -82,7 +82,7 @@ export const likeProduct = async (id) => {
     const response = await api.post(`/products/${id}/like`);
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    throw (error.response && error.response.data) || error;
   }
 };
 
@@ -92,7 +92,7 @@ export const getProductsByUser = async (userId) => {
     const response = await api.get(`/users/${userId}/products`);
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    throw (error.response && error.response.data) || error;
   }
 };
 
@@ -102,7 +102,7 @@ export const getPopularProducts = async (limit = 8) => {
     const response = await api.get('/products/popular', { params: { limit } });
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    throw (error.response && error.response.data) || error;
   }
 };
 
@@ -112,6 +112,6 @@ export const getRecentProducts = async (limit = 8) => {
     const response = await api.get('/products/recent', { params: { limit } });
     return response.data;
   } catch (error) {
-    throw error.response?.data || error;
+    throw (error.response && error.response.data) || error;
   }
 };

@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
-const User = require('./User'); // Assuming User model exists and is needed for association
+const User = require('./User');
 
 const CommunityPost = sequelize.define('CommunityPost', {
   id: {
@@ -8,11 +8,11 @@ const CommunityPost = sequelize.define('CommunityPost', {
     primaryKey: true,
     autoIncrement: true
   },
-  userId: { // Author of the post
+  user_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: User, // Reference to the User model
+      model: User,
       key: 'id'
     }
   },
@@ -36,7 +36,7 @@ const CommunityPost = sequelize.define('CommunityPost', {
     type: DataTypes.INTEGER,
     defaultValue: 0
   },
-  commentsCount: { // To store number of comments, if implemented
+  comments_count: {
     type: DataTypes.INTEGER,
     defaultValue: 0
   },
@@ -49,11 +49,14 @@ const CommunityPost = sequelize.define('CommunityPost', {
   }
 }, {
   tableName: 'community_posts',
-  timestamps: true // Adds createdAt and updatedAt fields
+  timestamps: true
 });
 
-// Define association
-CommunityPost.belongsTo(User, { foreignKey: 'userId', as: 'author' });
-User.hasMany(CommunityPost, { foreignKey: 'userId' });
+// Define associations
+CommunityPost.belongsTo(User, { foreignKey: 'user_id', as: 'author' });
+User.hasMany(CommunityPost, { foreignKey: 'user_id' });
+
+// Comment 관계는 Comment 모델에서 정의됨
+// CommunityPost.hasMany(Comment, { foreignKey: 'post_id', as: 'comments' });
 
 module.exports = CommunityPost;

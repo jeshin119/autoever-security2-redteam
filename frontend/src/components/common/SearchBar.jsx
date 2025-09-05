@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 
 const SearchContainer = styled.form`
@@ -56,7 +56,7 @@ const SearchButton = styled.button`
 
 const SearchBar = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const navigate = useNavigate();
+  const history = useHistory();
   const location = useLocation();
   
   // URL 변경 시 검색창 상태 동기화 제거 - 검색 후 즉시 초기화
@@ -82,7 +82,7 @@ const SearchBar = () => {
       setSearchQuery('');
       
       // Intentionally vulnerable: No input sanitization (XSS vulnerability)
-      navigate(`/search?q=${query}`);
+      history.push(`/search?q=${query}`);
     }
   };
 

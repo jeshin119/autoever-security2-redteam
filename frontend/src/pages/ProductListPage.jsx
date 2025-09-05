@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useLocation, useHistory, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { FiGrid, FiList, FiSearch, FiFilter, FiMapPin, FiHeart } from 'react-icons/fi';
 import { productService, getImageUrl } from '../services/api';
@@ -199,8 +199,15 @@ const ViewButton = styled.button`
 
 const ProductGrid = styled.div`
   display: grid;
-  grid-template-columns: ${props => props.viewMode === 'grid' ? 'repeat(auto-fill, minmax(280px, 1fr))' : '1fr'};
   gap: 1.5rem;
+  
+  &.grid-view {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+  
+  &.list-view {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const ProductCard = styled(Link)`
@@ -211,7 +218,11 @@ const ProductCard = styled(Link)`
   transition: all 0.3s ease;
   text-decoration: none;
   color: inherit;
-  display: ${props => props.$viewMode === 'list' ? 'flex' : 'block'};
+  display: block;
+  
+  &.list-view {
+    display: flex;
+  }
   
   &:hover {
     transform: translateY(-4px);
@@ -220,13 +231,16 @@ const ProductCard = styled(Link)`
 `;
 
 const ProductImage = styled.div`
-  width: ${props => props.$viewMode === 'list' ? '200px' : '100%'};
+  width: 100%;
   height: 200px;
-  background: ${props => props.image ? `url(${props.image})` : props.theme.colors.backgroundSecondary};
   background-size: cover;
   background-position: center;
   position: relative;
   flex-shrink: 0;
+  
+  &.list-view {
+    width: 200px;
+  }
 `;
 
 const StatusBadge = styled.span`
@@ -238,7 +252,7 @@ const StatusBadge = styled.span`
   font-size: 0.75rem;
   font-weight: 500;
   background: ${props => {
-    switch(props.status) {
+    switch (props.status) {
       case 'sold': return '#dc3545';
       case 'reserved': return '#fd7e14';
       default: return '#28a745';
@@ -320,14 +334,30 @@ const EmptyState = styled.div`
   }
 `;
 
+const normalizeCondition = (v) => (v === 'like-new' ? 'like_new' : (v || ''));
+
+const toImagesArray = (val) => {
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
 const ProductListPage = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const history = useHistory();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('grid');
   const [filters, setFilters] = useState({
-    search: searchParams.get('search') || '',
-    category: searchParams.get('category') || '',
+    search: '',
+    category: 'All Categories',
     condition: '',
     priceMin: '',
     priceMax: '',
@@ -337,7 +367,7 @@ const ProductListPage = () => {
   const categories = [
     'All Categories',
     '디지털/가전',
-    '가구/인테리어', 
+    '가구/인테리어',
     '패션/의류',
     '생활가전',
     '스포츠/레저',
@@ -345,22 +375,29 @@ const ProductListPage = () => {
     '기타'
   ];
 
-  const conditions = ['전체', 'like-new', 'good', 'fair', 'poor'];
+  const conditionOptions = [
+    { value: '', label: '전체' },
+    { value: 'like_new', label: '거의 새것' },
+    { value: 'good', label: '좋음' },
+    { value: 'fair', label: '보통' },
+    { value: 'poor', label: '나쁨' },
+  ];
 
   // 초기 로드 시 상품 목록 가져오기
   useEffect(() => {
-    console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
+    console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
     fetchProducts();
   }, []); // 초기 로드만 실행
 
   // URL 파라미터 변경 감지
   useEffect(() => {
     // URL에서 필터 값 가져오기
-    const category = searchParams.get('category') || '';
-    const search = searchParams.get('search') || '';
-    const condition = searchParams.get('condition') || '';
-    const location = searchParams.get('location') || '';
-    
+    const urlParams = new URLSearchParams(location.search);
+    const category = urlParams.get('category') || '';
+    const search = urlParams.get('search') || '';
+    const condition = urlParams.get('condition') || '';
+    const locationParam = urlParams.get('location') || '';
+
     // 필터 상태 업데이트
     setFilters({
       search: search,
@@ -368,29 +405,26 @@ const ProductListPage = () => {
       condition: condition,
       priceMin: '',
       priceMax: '',
-      location: location
+      location: locationParam
     });
-  }, [searchParams]); // searchParams 변경 시 실행
+  }, [location.search]); // location.search 변경 시 실행
 
-  // 필터 상태 변경 시 상품 목록 가져오기
+  // 검색어 제외한 필터 상태 변경 시 상품 목록 가져오기
   useEffect(() => {
     fetchProducts();
-  }, [filters]); // filters 변경 시 실행
+  }, [filters.category, filters.condition, filters.location]); // search 제외한 필터만 감지
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const apiCondition =
-        filters.condition && filters.condition !== '전체'
-          ? (filters.condition === 'like-new' ? 'like_new' : filters.condition)
-          : '';
+      const apiCondition = normalizeCondition(filters.condition);
       const response = await productService.getProducts({
         search: filters.search,
         category: filters.category !== 'All Categories' ? filters.category : '',
         condition: apiCondition,
         location: filters.location
       });
-      setProducts(response.data?.data || []);
+      setProducts((response.data && response.data.data) || []);
     } catch (error) {
       console.error('Failed to fetch products:', error);
       setProducts([]);
@@ -402,7 +436,7 @@ const ProductListPage = () => {
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-    
+
     // 검색어가 아닌 필터 변경 시에만 즉시 URL 업데이트
     if (key !== 'search') {
       const newParams = new URLSearchParams();
@@ -411,7 +445,7 @@ const ProductListPage = () => {
           newParams.set(k, v);
         }
       });
-      setSearchParams(newParams);
+      history.push(`?${newParams.toString()}`);
     }
   };
 
@@ -436,8 +470,8 @@ const ProductListPage = () => {
     if (filters.location) {
       newParams.set('location', filters.location);
     }
-    setSearchParams(newParams);
-    
+    history.push(`?${newParams.toString()}`);
+
     // 검색 실행
     fetchProducts();
   };
@@ -446,17 +480,15 @@ const ProductListPage = () => {
     return new Intl.NumberFormat('ko-KR').format(price) + '원';
   };
 
-  const getStatusText = (status) => {
-    switch(status) {
-      case 'sold': return '판매완료';
-      case 'reserved': return '예약중';
-      default: return '판매중';
-    }
+  const getStatusText = (isSold) => {
+    return isSold ? '판매완료' : '판매중';
   };
 
   const getConditionText = (condition) => {
-    switch(condition) {
-      case 'like-new': return '거의 새것';
+    switch (condition) {
+      case 'like_new':
+      case 'like-new':
+        return '거의 새것';
       case 'good': return '좋음';
       case 'fair': return '보통';
       case 'poor': return '나쁨';
@@ -506,7 +538,7 @@ const ProductListPage = () => {
               <FiFilter />
               필터
             </FilterTitle>
-            
+
             <FilterGroup>
               <FilterLabel>카테고리</FilterLabel>
               <Select
@@ -525,8 +557,8 @@ const ProductListPage = () => {
                 value={filters.condition}
                 onChange={(e) => handleFilterChange('condition', e.target.value)}
               >
-                {conditions.map(cond => (
-                  <option key={cond} value={cond}>{getConditionText(cond)}</option>
+                {conditionOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </Select>
             </FilterGroup>
@@ -554,14 +586,14 @@ const ProductListPage = () => {
               총 {products.length}개의 상품
             </ResultInfo>
             <ViewToggle>
-              <ViewButton 
-                active={viewMode === 'grid'} 
+              <ViewButton
+                active={viewMode === 'grid'}
                 onClick={() => setViewMode('grid')}
               >
                 <FiGrid />
               </ViewButton>
-              <ViewButton 
-                active={viewMode === 'list'} 
+              <ViewButton
+                active={viewMode === 'list'}
                 onClick={() => setViewMode('list')}
               >
                 <FiList />
@@ -575,25 +607,28 @@ const ProductListPage = () => {
               <p>다른 검색 조건을 시도해보세요</p>
             </EmptyState>
           ) : (
-            <ProductGrid viewMode={viewMode}>
+            <ProductGrid className={viewMode === 'grid' ? 'grid-view' : 'list-view'}>
               {products.map((product) => (
-                <ProductCard 
-                  key={product.id} 
+                <ProductCard
+                  key={product.id}
                   to={`/products/${product.id}`}
-                  $viewMode={viewMode}
+                  className={viewMode === 'list' ? 'list-view' : ''}
                 >
-                  <ProductImage 
-                    image={getImageUrl(product.images?.[0])} 
-                    $viewMode={viewMode}
+                  <ProductImage
+                    style={{
+                      backgroundImage: `url(${getImageUrl(toImagesArray(product.images)[0])})`,
+                      backgroundColor: '#f5f5f5'
+                    }}
+                    className={viewMode === 'list' ? 'list-view' : ''}
                   >
-                    <StatusBadge status={product.status}>
-                      {getStatusText(product.status)}
+                    <StatusBadge status={product.isSold ? 'sold' : 'available'}>
+                      {getStatusText(product.isSold)}
                     </StatusBadge>
                     <LikeButton onClick={(e) => e.preventDefault()}>
                       <FiHeart />
                     </LikeButton>
                   </ProductImage>
-                  
+
                   <ProductInfo>
                     <ProductTitle>{product.title}</ProductTitle>
                     <ProductPrice>{formatPrice(product.price)}</ProductPrice>

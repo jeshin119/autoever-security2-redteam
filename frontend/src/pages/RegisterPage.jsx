@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useHistory } from 'react-router-dom';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
 import { FiUser, FiMail, FiLock, FiPhone, FiMapPin, FiEye, FiEyeOff } from 'react-icons/fi';
@@ -148,7 +148,8 @@ const LoginLink = styled.div`
 `;
 
 const RegisterPage = () => {
-  const navigate = useNavigate();
+  const history = useHistory();
+  const isMountedRef = useRef(true);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -161,6 +162,12 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -223,12 +230,12 @@ const RegisterPage = () => {
       const response = await authService.register(registerData);
       if (response.data && response.data.success) {
         toast.success('회원가입이 완료되었습니다. 로그인해주세요.');
-        navigate('/login', { state: { email: formData.email } });
+        history.push('/login');
       }
     } catch (error) {
       console.error('Registration failed:', error);
       
-      if (error.response?.data?.message) {
+      if (error.response && error.response.data && error.response.data.message) {
         if (error.response.data.message.includes('already exists')) {
           setErrors({ email: '이미 사용 중인 이메일입니다' });
         } else {
@@ -238,7 +245,10 @@ const RegisterPage = () => {
         setErrors({ general: '회원가입 중 오류가 발생했습니다' });
       }
     } finally {
-      setIsLoading(false);
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 

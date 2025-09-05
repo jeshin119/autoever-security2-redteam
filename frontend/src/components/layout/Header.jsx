@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -173,6 +173,23 @@ const MenuDivider = styled.hr`
   border-top: 1px solid ${props => props.theme.colors.border};
 `;
 
+const MenuButton = styled.button`
+  display: block;
+  width: 100%;
+  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
+  color: ${props => props.theme.colors.text};
+  border-radius: ${props => props.theme.borderRadius.sm};
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: ${props => props.theme.transitions.fast};
+  
+  &:hover {
+    background: ${props => props.theme.colors.background};
+  }
+`;
+
 const MobileMenuButton = styled.button`
   display: none;
   
@@ -189,7 +206,7 @@ const Header = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const navigate = useNavigate();
+  const history = useHistory();
   const userMenuRef = useRef(null);
 
   // 외부 클릭 감지하여 드롭다운 닫기
@@ -230,8 +247,6 @@ const Header = () => {
           <NavLinks>
             <NavLink to="/products">중고거래</NavLink>
             <NavLink to="/community">동네생활</NavLink>
-            
-            
           </NavLinks>
         </NavSection>
 
@@ -245,28 +260,28 @@ const Header = () => {
           {isAuthenticated ? (
             <>
               <NotificationBadge />
-              <IconButton onClick={() => navigate('/chat')} title="채팅">
+              <IconButton onClick={() => history.push('/chat')} title="채팅">
                 💬
               </IconButton>
               
               <UserMenu ref={userMenuRef}>
                 <UserAvatar onClick={() => setShowUserMenu(!showUserMenu)}>
-                  {user?.profileImage ? (
+                  {user && user.profileImage ? (
                     <img src={user.profileImage} alt={user.name} />
                   ) : (
-                    user?.name?.charAt(0).toUpperCase() || 'U'
+                    (user && user.name && user.name.charAt(0).toUpperCase()) || 'U'
                   )}
                 </UserAvatar>
                 
                 <DropdownMenu show={showUserMenu}>
                   <MenuItem to="/my" onClick={() => setShowUserMenu(false)}>내 정보</MenuItem>
                   <MenuItem to="/products/new" onClick={() => setShowUserMenu(false)}>판매하기</MenuItem>
-                  <MenuItem to="/transactions" onClick={() => setShowUserMenu(false)}>거래내역</MenuItem>
+                  <MenuButton onClick={() => { history.push('/transactions'); setShowUserMenu(false); }}>거래내역</MenuButton>
                   <MenuDivider />
-                  <MenuItem to="/my/products" onClick={() => setShowUserMenu(false)}>내 상품 관리</MenuItem>
-                  <MenuItem to="/my/likes" onClick={() => setShowUserMenu(false)}>관심목록</MenuItem>
-                  <MenuItem to="/my/reviews" onClick={() => setShowUserMenu(false)}>받은 후기</MenuItem>
-                  {user?.role === 'admin' && (
+                  <MenuButton onClick={() => { history.push('/my/products'); setShowUserMenu(false); }}>내 상품 관리</MenuButton>
+                  <MenuButton onClick={() => { history.push('/my/likes'); setShowUserMenu(false); }}>관심목록</MenuButton>
+                  <MenuButton onClick={() => { history.push('/my/reviews'); setShowUserMenu(false); }}>받은 후기</MenuButton>
+                  {user && user.role === 'admin' && (
                     <>
                       <MenuDivider />
                       <MenuItem to="/admin" style={{ color: '#10b981', fontWeight: '600' }} onClick={() => setShowUserMenu(false)}>
@@ -275,7 +290,9 @@ const Header = () => {
                     </>
                   )}
                   <MenuDivider />
-                  <MenuItem as="button" onClick={handleLogout}>로그아웃</MenuItem>
+                  <MenuButton onClick={handleLogout}>
+                    로그아웃
+                  </MenuButton>
                 </DropdownMenu>
               </UserMenu>
             </>

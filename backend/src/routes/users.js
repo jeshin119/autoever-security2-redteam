@@ -269,10 +269,18 @@ router.get('/:id/products', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Fetch products created by the user (Product.userId is mapped to DB seller_id)
+    // Fetch products created by the user with buyer information for sold items
     const products = await Product.findAll({
       where: { userId: id },
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']],
+      include: [
+        {
+          model: User,
+          as: 'Buyer',
+          required: false,
+          attributes: ['id', 'name', 'email']
+        }
+      ]
     });
 
     res.json({
@@ -316,6 +324,67 @@ router.get('/:id/stats', async (req, res) => {
       message: 'Error retrieving user stats',
       error: error.message,
       stack: error.stack
+    });
+  }
+});
+
+// Credit charge endpoint - vulnerable to race conditions
+router.post('/:id/charge-credits', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { amount } = req.body;
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: '충전 금액을 올바르게 입력해주세요.'
+      });
+    }
+
+    // Intentionally vulnerable: No authentication check
+    // Anyone can charge credits for any user
+
+    // Find user (no lock)
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: '사용자를 찾을 수 없습니다.'
+      });
+    }
+
+    // Simulate payment processing delay (increases race condition chance)
+    console.log(`Processing credit charge for user ${userId}: ${amount}원`);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Race condition vulnerability: Read current credits without lock
+    const currentCredits = parseFloat(user.credits || 0);
+    const newCredits = currentCredits + parseFloat(amount);
+
+    // Update credits without checking if value changed
+    await User.update(
+      { credits: newCredits },
+      { where: { id: userId } }
+    );
+
+    console.log(`Credits charged successfully for user ${userId}: ${amount}원 (Total: ${newCredits}원)`);
+
+    res.json({
+      success: true,
+      message: '크레딧이 충전되었습니다!',
+      data: {
+        userId: userId,
+        chargedAmount: amount,
+        totalCredits: newCredits
+      }
+    });
+
+  } catch (error) {
+    console.error('Credit charge error:', error);
+    res.status(500).json({
+      success: false,
+      message: '크레딧 충전 중 오류가 발생했습니다.',
+      error: error.message
     });
   }
 });

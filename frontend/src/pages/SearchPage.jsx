@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useLocation, useHistory, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { FiSearch, FiFilter, FiMapPin, FiHeart, FiGrid, FiList } from 'react-icons/fi';
 import { productService, getImageUrl } from '../services/api';
@@ -198,9 +198,7 @@ const ProductGrid = styled.div`
   gap: 1.5rem;
 `;
 
-const ProductCard = styled(Link).attrs(props => ({
-  'data-viewmode': props.viewMode
-}))`
+const ProductCard = styled(Link)`
   background: white;
   border-radius: 12px;
   overflow: hidden;
@@ -208,7 +206,11 @@ const ProductCard = styled(Link).attrs(props => ({
   transition: all 0.3s ease;
   text-decoration: none;
   color: inherit;
-  display: ${props => props.$viewMode === 'list' ? 'flex' : 'block'};
+  display: block;
+  
+  &.list-view {
+    display: flex;
+  }
   
   &:hover {
     transform: translateY(-4px);
@@ -217,13 +219,17 @@ const ProductCard = styled(Link).attrs(props => ({
 `;
 
 const ProductImage = styled.div`
-  width: ${props => props.$viewMode === 'list' ? '200px' : '100%'};
+  width: 100%;
   height: 200px;
   background: ${props => props.image ? `url(${props.image})` : props.theme.colors.backgroundSecondary};
   background-size: cover;
   background-position: center;
   position: relative;
   flex-shrink: 0;
+  
+  .list-view & {
+    width: 200px;
+  }
 `;
 
 const ProductInfo = styled.div`
@@ -264,12 +270,16 @@ const EmptyState = styled.div`
 `;
 
 const SearchPage = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+  const location = useLocation();
+  const history = useHistory();
+  const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
+  
+  // Create searchParams object from location.search
+  const searchParams = new URLSearchParams(location.search);
   
   const [filters, setFilters] = useState({
     category: '',
@@ -308,17 +318,19 @@ const SearchPage = () => {
   ];
 
   useEffect(() => {
-    const query = searchParams.get('q') || '';
+    const urlParams = new URLSearchParams(location.search);
+    const query = urlParams.get('q') || '';
     setSearchQuery(query);
     if (query) {
       performSearch();
     }
-  }, [searchParams]);
+  }, [location.search]);
 
   const performSearch = async () => {
     try {
       setLoading(true);
-      const query = searchParams.get('q') || ''; // URL 파라미터에서 검색어 가져오기
+      const urlParams = new URLSearchParams(location.search);
+      const query = urlParams.get('q') || ''; // URL 파라미터에서 검색어 가져오기
       
       console.log('🔍 Performing search with query:', query); // 디버깅용 로그
       
@@ -328,7 +340,7 @@ const SearchPage = () => {
       });
       
       // Backend returns: { success: true, data: [...], pagination: {...} }
-      setProducts(response.data?.data || []);
+      setProducts((response.data && response.data.data) || []);
     } catch (error) {
       console.error('Search failed:', error);
       setProducts([]);
@@ -343,7 +355,7 @@ const SearchPage = () => {
     }
     const newParams = new URLSearchParams();
     newParams.set('q', searchQuery.trim());
-    setSearchParams(newParams);
+    history.push(`${location.pathname}?${newParams.toString()}`);
   };
 
   const handleKeyPress = (e) => {
@@ -498,12 +510,11 @@ const SearchPage = () => {
             <ProductCard 
               key={product.id} 
               to={`/products/${product.id}`}
-              $viewMode={viewMode}
+              className={viewMode === 'list' ? 'list-view' : ''}
             >
               <ProductImage 
-                image={getImageUrl(product.images?.[0])} 
+                image={getImageUrl((product.images && product.images[0]))} 
                 imageError={imageErrors[product.id]}
-                $viewMode={viewMode}
                 onError={() => handleImageError(product.id)}
               />
               

@@ -1,11 +1,10 @@
 import React from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { Route, Redirect } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../common/LoadingSpinner';
 
-const PrivateRoute = () => {
+const PrivateRoute = ({ component: Component, ...rest }) => {
   const { isAuthenticated, loading } = useAuth();
-  const location = useLocation();
 
   if (loading) {
     return <LoadingSpinner fullScreen text="인증 확인 중..." />;
@@ -13,10 +12,17 @@ const PrivateRoute = () => {
 
   // Intentionally vulnerable: Simple client-side authentication check
   // Can be bypassed by modifying localStorage
-  return isAuthenticated ? (
-    <Outlet />
-  ) : (
-    <Navigate to="/login" state={{ from: location }} replace />
+  return (
+    <Route
+      {...rest}
+      render={props =>
+        isAuthenticated ? (
+          <Component {...props} />
+        ) : (
+          <Redirect to="/login" />
+        )
+      }
+    />
   );
 };
 

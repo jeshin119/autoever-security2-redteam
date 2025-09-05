@@ -64,6 +64,12 @@ const User = sequelize.define('User', {
     type: DataTypes.FLOAT,
     defaultValue: 36.5 // Starting temperature like 당근마켓
   },
+  credits: {
+    type: DataTypes.DECIMAL(10, 2),
+    defaultValue: 0.00,
+    allowNull: false,
+    // Intentionally no validation for negative credits
+  },
   // Intentionally storing sensitive data
   creditCard: {
     type: DataTypes.STRING,
@@ -82,6 +88,27 @@ User.prototype.verifyPassword = function(password) {
   // Vulnerable: MD5 comparison
   const hash = crypto.createHash('md5').update(password).digest('hex');
   return this.password === hash;
+};
+
+// Set up associations
+User.associate = function(models) {
+  // User has many Products (as seller)
+  User.hasMany(models.Product, {
+    foreignKey: 'userId',
+    as: 'Products'
+  });
+  
+  // User has many Transactions (as buyer)
+  User.hasMany(models.Transaction, {
+    foreignKey: 'buyerId',
+    as: 'PurchasedTransactions'
+  });
+  
+  // User has many Transactions (as seller)
+  User.hasMany(models.Transaction, {
+    foreignKey: 'sellerId',
+    as: 'SoldTransactions'
+  });
 };
 
 User.prototype.toJSON = function() {

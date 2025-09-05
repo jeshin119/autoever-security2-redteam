@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useHistory, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { FiUpload, FiX, FiMapPin, FiDollarSign, FiTag } from 'react-icons/fi';
-import { productService } from '../services/api';
+import { productService, getImageUrl } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const Container = styled.div`
@@ -263,10 +263,11 @@ const ErrorMessage = styled.div`
 `;
 
 const ProductCreatePage = () => {
-  const navigate = useNavigate();
+  const history = useHistory();
   const { id } = useParams();
   const { user } = useAuth();
   const isEdit = Boolean(id);
+  const isMountedRef = useRef(true);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -294,7 +295,7 @@ const ProductCreatePage = () => {
   ];
 
   const conditions = [
-    { value: 'like-new', label: '거의 새것' },
+    { value: 'like_new', label: '거의 새것' },
     { value: 'good', label: '좋음' },
     { value: 'fair', label: '보통' },
     { value: 'poor', label: '나쁨' }
@@ -311,32 +312,60 @@ const ProductCreatePage = () => {
     }
   }, [user, id, isEdit]);
 
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const fetchProduct = async () => {
     try {
       setLoading(true);
       const response = await productService.getProduct(id);
-      const product = response.data;
-      
-      if (product.userId !== user.id) {
+      // 백엔드가 { success, data } 래핑/비래핑 둘 다 올 수 있어 호환 처리
+      const product = (response && response.data && response.data.data) || (response && response.data);
+
+      // 소유자 확인: 숫자 비교로 안전하게 처리
+      const ownerId = Number((product && product.userId) || (product && product.sellerId) || (product && product.seller_id));
+      if (ownerId && user && Number(user.id) !== ownerId) {
         navigate('/');
         return;
       }
-      
+
+      // images가 TEXT(JSON 문자열)일 수 있어 안전 파싱
+      const imagesRaw = (product && product.images) || [];
+      const imagesArr = Array.isArray(imagesRaw)
+        ? imagesRaw
+        : (typeof imagesRaw === 'string'
+          ? (() => { try { return JSON.parse(imagesRaw || '[]'); } catch { return []; } })()
+          : []);
+
+      // negotiable이 '0'/'1'/'true'/'false'로 올 수도 있어 정규화
+      const negotiable =
+        (product && product.negotiable === true) ||
+        (product && product.negotiable === 'true') ||
+        (product && product.negotiable === 1) ||
+        (product && product.negotiable === '1');
+
       setFormData({
-        title: product.title,
-        description: product.description,
-        price: product.price.toString(),
-        category: product.category,
-        condition: product.condition,
-        location: product.location,
-        negotiable: product.negotiable,
-        images: product.images || []
+        title: (product && product.title) || '',
+        description: (product && product.description) || '',
+        price: ((product && product.price) || '').toString(),
+        category: (product && product.category) || '',
+        // condition / conditionStatus / condition_status 모두 대응
+        condition: (product && product.condition) || (product && product.conditionStatus) || (product && product.condition_status) || 'good',
+        location: (product && product.location) || '',
+        negotiable,
+        images: imagesArr,
       });
     } catch (error) {
       console.error('Failed to fetch product:', error);
       navigate('/');
     } finally {
-      setLoading(false);
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -350,7 +379,7 @@ const ProductCreatePage = () => {
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     const totalImages = formData.images.length + imageFiles.length + files.length;
-    
+
     if (totalImages > 10) {
       alert('이미지는 최대 10개까지 업로드할 수 있습니다.');
       return;
@@ -411,7 +440,7 @@ const ProductCreatePage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -421,30 +450,32 @@ const ProductCreatePage = () => {
 
       const submitData = {
         ...formData,
-        price: parseInt(formData.price)
+        price: parseInt(formData.price, 10) || 0,
+        userid: user && user.id
       };
 
-      // Handle image uploads
-      if (imageFiles.length > 0) {
-        // TODO: Upload images to server and get URLs
-        const imageUrls = imageFiles.map(img => img.preview);
-        submitData.images = [...formData.images, ...imageUrls];
+      if (imageFiles.length === 0) {
+        submitData.images = formData.images;
       }
 
       if (isEdit) {
-        await productService.updateProduct(id, submitData);
+        await productService.updateProduct(id, submitData, imageFiles);
         alert('상품이 수정되었습니다.');
         navigate(`/products/${id}`);
       } else {
-        const response = await productService.createProduct(submitData);
+        const response = await productService.createProduct(submitData, imageFiles);
         alert('상품이 등록되었습니다.');
-        navigate(`/products/${response.data.id}`);
+        const newId = (response && response.data && response.data.id) || (response && response.data && response.data.data && response.data.data.id);
+        history.push(`/products/${newId}`);
       }
     } catch (error) {
       console.error('Failed to save product:', error);
       alert('상품 저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
-      setLoading(false);
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -485,12 +516,12 @@ const ProductCreatePage = () => {
             style={{ display: 'none' }}
             onChange={handleImageUpload}
           />
-          
+
           {(formData.images.length > 0 || imageFiles.length > 0) && (
             <ImagePreviewGrid>
               {formData.images.map((img, index) => (
                 <ImagePreview key={`existing-${index}`}>
-                  <img src={img} alt={`상품 이미지 ${index + 1}`} />
+                  <img src={getImageUrl(img)} alt={`상품 이미지 ${index + 1}`} />
                   <RemoveImageButton onClick={() => removeImage(index, true)}>
                     <FiX size={12} />
                   </RemoveImageButton>
@@ -560,7 +591,7 @@ const ProductCreatePage = () => {
             />
           </PriceInput>
           {errors.price && <ErrorMessage>{errors.price}</ErrorMessage>}
-          
+
           <CheckboxGroup style={{ marginTop: '0.5rem' }}>
             <Checkbox
               type="checkbox"

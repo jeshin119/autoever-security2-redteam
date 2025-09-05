@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useHistory, useLocation } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
@@ -95,12 +95,19 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const isMountedRef = useRef(true);
   
   const { login } = useAuth();
-  const navigate = useNavigate();
+  const history = useHistory();
   const location = useLocation();
   
-  const from = location.state?.from?.pathname || '/';
+  const from = (location.state && location.state.from && location.state.from.pathname) || '/';
+  
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -117,12 +124,15 @@ const LoginPage = () => {
       const result = await login(email, password);
       
       if (result.success) {
-        navigate(from, { replace: true });
+        history.replace(from);
       }
     } catch (error) {
       console.error('Login error:', error);
     } finally {
-      setLoading(false);
+      // Only update state if component is still mounted
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
   

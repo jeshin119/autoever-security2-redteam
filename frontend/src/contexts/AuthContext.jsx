@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import authService from '../services/authService';
 
@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const navigate = useNavigate();
+  const history = useHistory();
 
   useEffect(() => {
     checkAuth();
@@ -63,9 +63,9 @@ export const AuthProvider = ({ children }) => {
         
         // 관리자인 경우 관리자 페이지로 자동 전환
         if (response.user.role === 'admin') {
-          navigate('/admin');
+          history.push('/admin');
         } else {
-          navigate('/');
+          history.push('/');
         }
         
         return { success: true };
@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }) => {
       
       if (response.success) {
         toast.success('회원가입 성공! 로그인해주세요.');
-        navigate('/login');
+        history.push('/login');
         return { success: true };
       } else {
         toast.error(response.message || '회원가입 실패');
@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setIsAuthenticated(false);
     toast.info('로그아웃되었습니다.');
-    navigate('/');
+    history.push('/');
   };
 
   const updateUser = (userData) => {

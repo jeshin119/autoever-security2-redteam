@@ -54,6 +54,16 @@ const Product = sequelize.define('Product', {
     defaultValue: false,
     field: 'is_sold',
   },
+  buyerId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'buyer_id',
+  },
+  soldAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'sold_at',
+  },
   views: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
@@ -82,6 +92,27 @@ const Product = sequelize.define('Product', {
   timestamps: true,
   underscored: true,
 });
+
+// Set up associations
+Product.associate = function(models) {
+  // Product has many Transactions
+  Product.hasMany(models.Transaction, {
+    foreignKey: 'productId',
+    as: 'Transactions'
+  });
+  
+  // Product belongs to User (seller)
+  Product.belongsTo(models.User, {
+    foreignKey: 'userId',
+    as: 'Seller'
+  });
+  
+  // Product belongs to User (buyer) - only for sold products
+  Product.belongsTo(models.User, {
+    foreignKey: 'buyerId',
+    as: 'Buyer'
+  });
+};
 
 // Intentionally vulnerable: No input sanitization
 Product.prototype.incrementViews = async function() {

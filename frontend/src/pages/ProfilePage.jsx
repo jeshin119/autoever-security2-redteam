@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 import styled from 'styled-components';
 import { FiUser, FiStar, FiMapPin, FiClock, FiShield } from 'react-icons/fi';
 import { userService, productService, getImageUrl } from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 const Container = styled.div`
   max-width: 1200px;
@@ -104,6 +105,8 @@ const ProductCard = styled.div`
   overflow: hidden;
   cursor: pointer;
   transition: all 0.3s ease;
+  background: ${props => props.isSold ? '#f8f9fa' : 'white'};
+  opacity: ${props => props.isSold ? 0.8 : 1};
   
   &:hover {
     transform: translateY(-2px);
@@ -117,6 +120,25 @@ const ProductImage = styled.div`
   background: ${props => props.image ? `url(${props.image})` : props.theme.colors.backgroundSecondary};
   background-size: cover;
   background-position: center;
+  position: relative;
+`;
+
+const StatusBadge = styled.span`
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: ${props => {
+    switch(props.status) {
+      case 'sold': return '#dc3545';
+      case 'reserved': return '#fd7e14';
+      default: return '#28a745';
+    }
+  }};
+  color: white;
 `;
 
 const ProductInfo = styled.div`
@@ -144,10 +166,14 @@ const EmptyState = styled.div`
 
 const ProfilePage = () => {
   const { userId } = useParams();
-  const navigate = useNavigate();
+  const history = useHistory();
+  const { user: currentUser } = useAuth();
   const [user, setUser] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Check if viewing own profile
+  const isOwnProfile = currentUser && userId && parseInt(userId) === parseInt(currentUser.id);
 
   useEffect(() => {
     fetchUserProfile();
@@ -186,6 +212,10 @@ const ProfilePage = () => {
       return '가격 미정';
     }
     return new Intl.NumberFormat('ko-KR').format(price) + '원';
+  };
+
+  const getStatusText = (isSold) => {
+    return isSold ? '판매완료' : '판매중';
   };
 
   const formatJoinDate = (date) => {
@@ -227,7 +257,7 @@ const ProfilePage = () => {
     <Container>
       <ProfileSection>
         <ProfileAvatar>
-          {user.name?.charAt(0) || 'U'}
+          {(user.name && user.name.charAt(0)) || 'U'}
         </ProfileAvatar>
         
         <ProfileInfo>
@@ -261,9 +291,14 @@ const ProfilePage = () => {
             {products.map((product) => (
               <ProductCard 
                 key={product.id}
-                onClick={() => navigate(`/products/${product.id}`)}
+                onClick={() => history.push(`/products/${product.id}`)}
+                isSold={product.isSold}
               >
-                <ProductImage image={getImageUrl(product.images?.[0])} />
+                <ProductImage image={getImageUrl((product.images && product.images[0]))}>
+                  <StatusBadge status={product.isSold ? 'sold' : 'available'}>
+                    {getStatusText(product.isSold)}
+                  </StatusBadge>
+                </ProductImage>
                 <ProductInfo>
                   <ProductTitle>{product.title}</ProductTitle>
                   <ProductPrice>{formatPrice(product.price)}</ProductPrice>

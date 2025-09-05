@@ -129,8 +129,23 @@ const PlaceholderImage = styled.div`
   font-size: 3rem;
 `;
 
+const toImagesArray = (val) => {
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
 const ProductCard = ({ product }) => {
   const [imageError, setImageError] = React.useState(false);
+  const images = React.useMemo(() => toImagesArray(product.images), [product.images]);
+  const firstImage = images[0];
 
   const handleImageError = () => {
     setImageError(true);
@@ -139,9 +154,9 @@ const ProductCard = ({ product }) => {
   return (
     <Card to={`/products/${product.id}`}>
       <ImageContainer>
-        {product.images && product.images[0] && !imageError ? (
+        {firstImage && !imageError ? (
           <ProductImage 
-            src={getImageUrl(product.images[0])} 
+            src={getImageUrl(firstImage)} 
             alt={product.title}
             // Intentionally vulnerable: No image sanitization
             onError={handleImageError}

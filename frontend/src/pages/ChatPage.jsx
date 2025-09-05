@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { FiSend, FiImage, FiArrowLeft, FiMoreHorizontal } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
@@ -299,7 +299,8 @@ const ProductPrice = styled.div`
 `;
 
 const ChatPage = () => {
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
   const { user } = useAuth();
   const [showList, setShowList] = useState(true);
   const [showChat, setShowChat] = useState(false);
@@ -378,9 +379,9 @@ const ChatPage = () => {
           const msgs = response.data.data.map(msg => ({
             id: msg.id,
             text: msg.message,
-            isOwn: msg.senderId === user?.id,
+            isOwn: msg.senderId === (user && user.id),
             timestamp: msg.timestamp,
-            sender: msg.senderId === user?.id ? user.name : selectedRoom.partnerName
+            sender: msg.senderId === (user && user.id) ? user.name : selectedRoom.partnerName
           }));
           setMessages(msgs);
         }
@@ -400,7 +401,7 @@ const ChatPage = () => {
             text: '네, 안녕하세요! 어떤 것이 궁금하신가요?',
             isOwn: true,
             timestamp: new Date(Date.now() - 3600000).toISOString(),
-            sender: user?.name
+            sender: user && user.name
           },
           {
             id: 3,
@@ -421,7 +422,9 @@ const ChatPage = () => {
   }, [messages]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const selectRoom = (room) => {
@@ -448,7 +451,7 @@ const ChatPage = () => {
       text: messageText,
       isOwn: true,
       timestamp: new Date().toISOString(),
-      sender: user?.name
+              sender: user && user.name
     };
 
     setMessages(prev => [...prev, optimisticMessage]);
@@ -457,7 +460,7 @@ const ChatPage = () => {
       // Send message to API
       const response = await chatService.sendMessage(selectedRoom.id, {
         message: messageText,
-        senderId: user?.id || 1 // Default to 1 if no user
+        senderId: (user && user.id) || 1 // Default to 1 if no user
       });
 
       if (response.data && response.data.success) {
@@ -551,7 +554,7 @@ const ChatPage = () => {
           {chatRooms.map(room => (
             <ChatRoomItem
               key={room.id}
-              active={selectedRoom?.id === room.id}
+              active={selectedRoom && selectedRoom.id === room.id}
               onClick={() => selectRoom(room)}
             >
               <ChatRoomHeader>

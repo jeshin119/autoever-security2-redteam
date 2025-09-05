@@ -562,7 +562,7 @@ const ProductManagementPage = ({ onBack }) => {
               <Label>상품명</Label>
               <Input
                 type="text"
-                value={editingProduct?.title || ''}
+                value={(editingProduct && editingProduct.title) || ''}
                 onChange={(e) => setEditingProduct({...editingProduct, title: e.target.value})}
               />
             </FormGroup>
@@ -570,7 +570,7 @@ const ProductManagementPage = ({ onBack }) => {
             <FormGroup>
               <Label>설명</Label>
               <Textarea
-                value={editingProduct?.description || ''}
+                value={(editingProduct && editingProduct.description) || ''}
                 onChange={(e) => setEditingProduct({...editingProduct, description: e.target.value})}
               />
             </FormGroup>
@@ -579,7 +579,7 @@ const ProductManagementPage = ({ onBack }) => {
               <Label>가격</Label>
               <Input
                 type="number"
-                value={editingProduct?.price || 0}
+                value={(editingProduct && editingProduct.price) || 0}
                 onChange={(e) => setEditingProduct({...editingProduct, price: parseInt(e.target.value)})}
               />
             </FormGroup>
@@ -587,7 +587,7 @@ const ProductManagementPage = ({ onBack }) => {
             <FormGroup>
               <Label>카테고리</Label>
               <Select
-                value={editingProduct?.category || ''}
+                value={(editingProduct && editingProduct.category) || ''}
                 onChange={(e) => setEditingProduct({...editingProduct, category: e.target.value})}
               >
                 <option value="디지털/가전">디지털/가전</option>
@@ -600,7 +600,7 @@ const ProductManagementPage = ({ onBack }) => {
             <FormGroup>
               <Label>상태</Label>
               <Select
-                value={editingProduct?.status || 'pending'}
+                value={(editingProduct && editingProduct.status) || 'pending'}
                 onChange={(e) => setEditingProduct({...editingProduct, status: e.target.value})}
               >
                 <option value="pending">검토중</option>
@@ -614,7 +614,7 @@ const ProductManagementPage = ({ onBack }) => {
               <Label>위치</Label>
               <Input
                 type="text"
-                value={editingProduct?.location || ''}
+                value={(editingProduct && editingProduct.location) || ''}
                 onChange={(e) => setEditingProduct({...editingProduct, location: e.target.value})}
               />
             </FormGroup>

