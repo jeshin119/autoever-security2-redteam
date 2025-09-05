@@ -44,10 +44,10 @@ const connectDB = async () => {
     
     console.log('✅ In-memory chat storage initialized.');
     
+    return true;
   } catch (error) {
     console.error('❌ Database connection failed:', error);
-    // In a real production environment, you might want to exit the process
-    // process.exit(1); 
+    throw error; // Re-throw to handle in calling function
   }
 };
 

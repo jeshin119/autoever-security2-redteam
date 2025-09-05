@@ -93,22 +93,58 @@ User.prototype.verifyPassword = function(password) {
 // Set up associations
 User.associate = function(models) {
   // User has many Products (as seller)
-  User.hasMany(models.Product, {
-    foreignKey: 'userId',
-    as: 'Products'
-  });
+  if (models.Product) {
+    User.hasMany(models.Product, {
+      foreignKey: 'userId',
+      as: 'Products'
+    });
+  }
   
   // User has many Transactions (as buyer)
-  User.hasMany(models.Transaction, {
-    foreignKey: 'buyerId',
-    as: 'PurchasedTransactions'
-  });
+  if (models.Transaction) {
+    User.hasMany(models.Transaction, {
+      foreignKey: 'buyerId',
+      as: 'PurchasedTransactions'
+    });
+    
+    // User has many Transactions (as seller)
+    User.hasMany(models.Transaction, {
+      foreignKey: 'sellerId',
+      as: 'SoldTransactions'
+    });
+  }
   
-  // User has many Transactions (as seller)
-  User.hasMany(models.Transaction, {
-    foreignKey: 'sellerId',
-    as: 'SoldTransactions'
-  });
+  // User has many UserCoupons
+  if (models.UserCoupon) {
+    User.hasMany(models.UserCoupon, {
+      foreignKey: 'userId',
+      as: 'UserCoupons'
+    });
+  }
+  
+  // User has many UserLikes
+  if (models.UserLikes) {
+    User.hasMany(models.UserLikes, {
+      foreignKey: 'userId',
+      as: 'UserLikes'
+    });
+  }
+  
+  // User has many CommunityPosts
+  if (models.CommunityPost) {
+    User.hasMany(models.CommunityPost, {
+      foreignKey: 'userId',
+      as: 'CommunityPosts'
+    });
+  }
+  
+  // User has many Comments
+  if (models.Comment) {
+    User.hasMany(models.Comment, {
+      foreignKey: 'userId',
+      as: 'Comments'
+    });
+  }
 };
 
 User.prototype.toJSON = function() {

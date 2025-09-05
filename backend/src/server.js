@@ -33,9 +33,26 @@ const User = require('./models/User');
 const Product = require('./models/Product');
 const Transaction = require('./models/Transaction');
 const CommunityPost = require('./models/CommunityPost');
+const Comment = require('./models/Comment');
+const Coupon = require('./models/Coupon');
+const UserCoupon = require('./models/UserCoupon');
+const UserLikes = require('./models/UserLikes');
+const CommunityPostLike = require('./models/CommunityPostLike');
 
 // Initialize model associations
-const models = { User, Product, Transaction, CommunityPost };
+const models = { 
+  User, 
+  Product, 
+  Transaction, 
+  CommunityPost, 
+  Comment, 
+  Coupon, 
+  UserCoupon, 
+  UserLikes, 
+  CommunityPostLike 
+};
+
+// Set up associations after all models are loaded
 Object.keys(models).forEach(modelName => {
   if (models[modelName].associate) {
     models[modelName].associate(models);
@@ -61,8 +78,20 @@ const io = socketio(httpServer, {
   }
 });
 
-// Connect to database
-connectDB();
+// Connect to database and initialize models
+async function initializeApp() {
+  try {
+    // Connect to database first
+    await connectDB();
+    console.log('✅ Database connected and models synchronized');
+  } catch (error) {
+    console.error('❌ Failed to initialize database:', error);
+    process.exit(1);
+  }
+}
+
+// Initialize the app
+initializeApp();
 
 // Intentionally vulnerable: Weak security headers
 app.use(helmet({
