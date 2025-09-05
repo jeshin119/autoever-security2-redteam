@@ -252,8 +252,7 @@ app.get('/', (req, res) => {
 // API root endpoint
 app.get('/api', (req, res) => {
   res.json({
-    message: 'Vintage Market API - Educational Security Testing Platform',
-    warning: '⚠️ This API contains intentional security vulnerabilities for educational purposes only!',
+    message: 'Vintage Market API',
     endpoints: {
       auth: '/api/auth',
       users: '/api/users',
@@ -371,9 +370,9 @@ async function startServer() {
 ║   • Users: /api/users                             ║
 ║   • Products: /api/products                       ║
 ║                                                    ║
-║   ⚠️  WARNING: This server contains intentional   ║
-║      security vulnerabilities for educational     ║
-║      purposes only!                               ║
+║                                                   ║
+║                                                   ║
+║                                                   ║
 ║                                                    ║
 ╚════════════════════════════════════════════════════╝
       `);

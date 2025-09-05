@@ -1,6 +1,4 @@
-# 🛒 Vintage Market - Educational Security Testing Platform
-
-> ⚠️ **Educational Use Only**: This application contains intentional security vulnerabilities for learning purposes. Do not deploy to production.
+# 🛒 Vintage Market - Security Platform
 
 ## 🚀 Quick Start
 
@@ -129,7 +127,7 @@ This platform contains **intentional security vulnerabilities** including:
 - Information Disclosure
 - Input Validation Bypasses
 
-**Use only in isolated educational environments.**
+**Use only in isolated environments.**
 
 ## 🧪 Features
 
@@ -181,4 +179,4 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 ---
 
-**Educational Platform** | **Security Testing** | **OWASP Learning** | **Intentionally Vulnerable**
+**Security Testing** | **OWASP Learning**
