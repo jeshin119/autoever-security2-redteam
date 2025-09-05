@@ -80,13 +80,13 @@ services:
     command: --default-authentication-plugin=mysql_native_password
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: vintagemarket
+      MYSQL_USER: vintage_user
+      MYSQL_PASSWORD: vintage_password
     volumes:
       - mysql_data:/var/lib/mysql
-      - /home/devuser/backend/database:/docker-entrypoint-initdb.d
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - internal_net
 
@@ -97,7 +97,7 @@ services:
     environment:
       PMA_HOST: database
       PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: root_password
     ports:
       # [수정] Jenkins와의 충돌을 피해 8081 포트로 명확히 지정
       - "8081:80"

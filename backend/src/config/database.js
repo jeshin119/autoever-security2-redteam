@@ -3,7 +3,7 @@ require('dotenv').config();
 
 // MySQL connection settings
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'vintage_market',
+  process.env.DB_NAME || 'vintagemarket',
   process.env.DB_USER || 'user',
   process.env.DB_PASSWORD || 'password',
   {

@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 const API_BASE_URL = process.env.REACT_APP_API_URL || "http://192.168.201.102:3001/api";
 
 // Backend base URL for images (without /api)
-const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://192.168.201.102:3001:3000";
+const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://192.168.201.102:3001";
 
 // Utility function to get proper image URLs
 export const getImageUrl = (imagePath) => {

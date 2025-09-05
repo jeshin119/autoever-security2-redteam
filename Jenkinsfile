@@ -19,7 +19,6 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building Docker Image...'
-                sh 'docker compose down database -v'
                 sh 'docker compose build backend frontend database'
                 
             }
