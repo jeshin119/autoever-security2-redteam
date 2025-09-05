@@ -54,7 +54,6 @@ const CommunityPost = sequelize.define('CommunityPost', {
 
 // Define associations
 CommunityPost.belongsTo(User, { foreignKey: 'user_id', as: 'author' });
-User.hasMany(CommunityPost, { foreignKey: 'user_id' });
 
 // Comment 관계는 Comment 모델에서 정의됨
 // CommunityPost.hasMany(Comment, { foreignKey: 'post_id', as: 'comments' });

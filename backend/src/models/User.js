@@ -140,7 +140,7 @@ User.associate = function(models) {
   // User has many CommunityPosts
   if (models.CommunityPost) {
     User.hasMany(models.CommunityPost, {
-      foreignKey: 'userId',
+      foreignKey: 'user_id',
       as: 'CommunityPosts'
     });
   }
