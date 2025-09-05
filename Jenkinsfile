@@ -19,7 +19,9 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building Docker Image...'
+                sh 'docker compose down database -v'
                 sh 'docker compose build backend frontend database'
+                
             }
         }
         stage('Deploy') {
@@ -27,7 +29,6 @@ pipeline {
                 echo 'Deploy stage: Pretending to deploy the application...'
                 sh 'docker compose down backend'
                 sh 'docker compose down frontend'
-                sh 'docker compose down database -v'
                 sh 'docker compose up backend -d'
                 sh 'docker compose up frontend -d'
                 //sh 'docker compose exec backend node src/scripts/seedData.js'

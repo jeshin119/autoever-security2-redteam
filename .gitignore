@@ -87,3 +87,4 @@ claude.md
 .claude
 package.json
 package-lock.json
+claude.mjs
