@@ -34,11 +34,29 @@ const CommunityPostLike = sequelize.define('CommunityPostLike', {
       unique: true,
       fields: ['user_id', 'post_id']
     }
-  ]
+  ],
+  hooks: {
+    beforeSync: async (options) => {
+      // Safe migration: 기존 NULL 값들을 현재 시간으로 업데이트
+      if (options.force || options.alter) {
+        try {
+          await sequelize.query(`
+            UPDATE community_post_likes 
+            SET 
+              created_at = COALESCE(created_at, NOW()),
+              updated_at = COALESCE(updated_at, NOW())
+            WHERE created_at IS NULL OR updated_at IS NULL
+          `);
+        } catch (error) {
+          console.warn('Warning: Could not update NULL timestamps in community_post_likes table:', error.message);
+        }
+      }
+    }
+  }
 });
 
 // Define associations
-CommunityPostLike.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-CommunityPostLike.belongsTo(CommunityPost, { foreignKey: 'post_id', as: 'post' });
+CommunityPostLike.belongsTo(User, { foreignKey: 'user_id', as: 'likeUser' });
+CommunityPostLike.belongsTo(CommunityPost, { foreignKey: 'post_id', as: 'likedPost' });
 
 module.exports = CommunityPostLike;

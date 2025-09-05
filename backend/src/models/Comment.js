@@ -39,16 +39,33 @@ const Comment = sequelize.define('Comment', {
   }
 }, {
   tableName: 'community_comments',
-  timestamps: true
+  timestamps: true,
+  hooks: {
+    beforeSync: async (options) => {
+      // Safe migration: 기존 NULL 값들을 현재 시간으로 업데이트
+      if (options.force || options.alter) {
+        try {
+          await sequelize.query(`
+            UPDATE community_comments 
+            SET 
+              created_at = COALESCE(created_at, NOW()),
+              updated_at = COALESCE(updated_at, NOW())
+            WHERE created_at IS NULL OR updated_at IS NULL
+          `);
+        } catch (error) {
+          console.warn('Warning: Could not update NULL timestamps in community_comments table:', error.message);
+        }
+      }
+    }
+  }
 });
 
 // Define associations
-Comment.belongsTo(User, { foreignKey: 'user_id', as: 'author' });
-Comment.belongsTo(CommunityPost, { foreignKey: 'post_id', as: 'post' });
+Comment.belongsTo(User, { foreignKey: 'user_id', as: 'commentAuthor' });
+Comment.belongsTo(CommunityPost, { foreignKey: 'post_id', as: 'relatedPost' });
 Comment.belongsTo(Comment, { foreignKey: 'parent_id', as: 'parent' });
 Comment.hasMany(Comment, { foreignKey: 'parent_id', as: 'replies' });
 
-User.hasMany(Comment, { foreignKey: 'user_id' });
-// CommunityPost.hasMany(Comment, { foreignKey: 'post_id' }); // 이 관계는 CommunityPost 모델에서 정의
+// User와 CommunityPost 연관관계는 각각의 모델에서 정의됨
 
 module.exports = Comment;

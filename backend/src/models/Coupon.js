@@ -27,26 +27,48 @@ const Coupon = sequelize.define('Coupon', {
   minOrderAmount: {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0,
+    field: 'min_order_amount'
   },
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
+    field: 'is_active'
   },
   expiresAt: {
     type: DataTypes.DATE,
     allowNull: true,
-  },
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
-  },
-  updatedAt: {
-    type: DataTypes.DATE,
-    defaultValue: DataTypes.NOW,
+    field: 'expires_at'
   },
 }, {
   tableName: 'coupons',
   timestamps: true,
+  hooks: {
+    beforeSync: async (options) => {
+      // Safe migration: 기존 NULL 값들을 현재 시간으로 업데이트
+      if (options.force || options.alter) {
+        try {
+          await sequelize.query(`
+            UPDATE coupons 
+            SET 
+              created_at = COALESCE(created_at, NOW()),
+              updated_at = COALESCE(updated_at, NOW())
+            WHERE created_at IS NULL OR updated_at IS NULL
+          `);
+        } catch (error) {
+          console.warn('Warning: Could not update NULL timestamps in coupons table:', error.message);
+        }
+      }
+    }
+  }
 });
+
+// Set up associations  
+Coupon.associate = function(models) {
+  // Coupon has many UserCoupons
+  Coupon.hasMany(models.UserCoupon, {
+    foreignKey: 'coupon_id',
+    as: 'userCoupons'
+  });
+};
 
 module.exports = Coupon;

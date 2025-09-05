@@ -81,36 +81,56 @@ const Product = sequelize.define('Product', {
   // Intentionally vulnerable fields
   sellerPhone: {
     type: DataTypes.STRING,
+    field: 'seller_phone'
     // Exposing personal contact
   },
   sellerEmail: {
     type: DataTypes.STRING,
+    field: 'seller_email'
     // Exposing personal email
   }
 }, {
   tableName: 'products',
   timestamps: true,
   underscored: true,
+  hooks: {
+    beforeSync: async (options) => {
+      // Safe migration: 기존 NULL 값들을 현재 시간으로 업데이트
+      if (options.force || options.alter) {
+        try {
+          await sequelize.query(`
+            UPDATE products 
+            SET 
+              created_at = COALESCE(created_at, NOW()),
+              updated_at = COALESCE(updated_at, NOW())
+            WHERE created_at IS NULL OR updated_at IS NULL
+          `);
+        } catch (error) {
+          console.warn('Warning: Could not update NULL timestamps in products table:', error.message);
+        }
+      }
+    }
+  }
 });
 
 // Set up associations
 Product.associate = function(models) {
   // Product has many Transactions
   Product.hasMany(models.Transaction, {
-    foreignKey: 'productId',
+    foreignKey: 'product_id',
     as: 'Transactions'
   });
   
   // Product belongs to User (seller)
   Product.belongsTo(models.User, {
-    foreignKey: 'userId',
-    as: 'Seller'
+    foreignKey: 'seller_id',
+    as: 'ProductSeller'
   });
   
   // Product belongs to User (buyer) - only for sold products
   Product.belongsTo(models.User, {
-    foreignKey: 'buyerId',
-    as: 'Buyer'
+    foreignKey: 'buyer_id',
+    as: 'ProductBuyer'
   });
 };
 

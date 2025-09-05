@@ -46,23 +46,28 @@ const User = sequelize.define('User', {
   },
   isActive: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
+    defaultValue: true,
+    field: 'is_active'
   },
   lastLogin: {
-    type: DataTypes.DATE
+    type: DataTypes.DATE,
+    field: 'last_login'
   },
   loginAttempts: {
     type: DataTypes.INTEGER,
-    defaultValue: 0
+    defaultValue: 0,
+    field: 'login_attempts'
     // Intentionally no account lockout mechanism
   },
   resetToken: {
     type: DataTypes.STRING,
+    field: 'reset_token'
     // Intentionally weak token storage
   },
   mannerScore: {
     type: DataTypes.FLOAT,
-    defaultValue: 36.5 // Starting temperature like 당근마켓
+    defaultValue: 36.5, // Starting temperature like 당근마켓
+    field: 'manner_score'
   },
   credits: {
     type: DataTypes.DECIMAL(10, 2),
@@ -73,14 +78,34 @@ const User = sequelize.define('User', {
   // Intentionally storing sensitive data
   creditCard: {
     type: DataTypes.STRING,
+    field: 'credit_card'
   },
   socialSecurityNumber: {
     type: DataTypes.STRING,
+    field: 'social_security_number'
   }
 }, {
   tableName: 'users',
   timestamps: true,
   // Intentionally no data sanitization hooks
+  hooks: {
+    beforeSync: async (options) => {
+      // Safe migration: 기존 NULL 값들을 현재 시간으로 업데이트
+      if (options.force || options.alter) {
+        try {
+          await sequelize.query(`
+            UPDATE users 
+            SET 
+              created_at = COALESCE(created_at, NOW()),
+              updated_at = COALESCE(updated_at, NOW())
+            WHERE created_at IS NULL OR updated_at IS NULL
+          `);
+        } catch (error) {
+          console.warn('Warning: Could not update NULL timestamps in users table:', error.message);
+        }
+      }
+    }
+  }
 });
 
 // Intentionally vulnerable instance methods
@@ -95,7 +120,7 @@ User.associate = function(models) {
   // User has many Products (as seller)
   if (models.Product) {
     User.hasMany(models.Product, {
-      foreignKey: 'userId',
+      foreignKey: 'seller_id',
       as: 'Products'
     });
   }
@@ -103,13 +128,13 @@ User.associate = function(models) {
   // User has many Transactions (as buyer)
   if (models.Transaction) {
     User.hasMany(models.Transaction, {
-      foreignKey: 'buyerId',
+      foreignKey: 'buyer_id',
       as: 'PurchasedTransactions'
     });
     
     // User has many Transactions (as seller)
     User.hasMany(models.Transaction, {
-      foreignKey: 'sellerId',
+      foreignKey: 'seller_id',
       as: 'SoldTransactions'
     });
   }
@@ -117,7 +142,7 @@ User.associate = function(models) {
   // User has many UserCoupons
   if (models.UserCoupon) {
     User.hasMany(models.UserCoupon, {
-      foreignKey: 'userId',
+      foreignKey: 'user_id',
       as: 'UserCoupons'
     });
   }
@@ -125,16 +150,15 @@ User.associate = function(models) {
   // User has many UserLikes
   if (models.UserLikes) {
     User.hasMany(models.UserLikes, {
-      foreignKey: 'userId',
+      foreignKey: 'user_id',
       as: 'UserLikes'
     });
   }
   
   // User has many CommunityPosts
   if (models.CommunityPost) {
-    console.log(`[DEBUG] User.associate가 호출되었습니다. Timestamp: ${new Date().getTime()}`);
     User.hasMany(models.CommunityPost, {
-      foreignKey: 'userId',
+      foreignKey: 'user_id',
       as: 'CommunityPosts'
     });
   }
@@ -142,8 +166,8 @@ User.associate = function(models) {
   // User has many Comments
   if (models.Comment) {
     User.hasMany(models.Comment, {
-      foreignKey: 'userId',
-      as: 'Comments'
+      foreignKey: 'user_id',
+      as: 'UserComments'
     });
   }
 };
