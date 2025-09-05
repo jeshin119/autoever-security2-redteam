@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { FiUpload, FiX, FiMapPin, FiDollarSign, FiTag } from 'react-icons/fi';
@@ -267,7 +267,6 @@ const ProductCreatePage = () => {
   const { id } = useParams();
   const { user } = useAuth();
   const isEdit = Boolean(id);
-  const isMountedRef = useRef(true);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -311,12 +310,6 @@ const ProductCreatePage = () => {
       fetchProduct();
     }
   }, [user, id, isEdit]);
-
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
 
   const fetchProduct = async () => {
     try {
@@ -362,10 +355,7 @@ const ProductCreatePage = () => {
       console.error('Failed to fetch product:', error);
       navigate('/');
     } finally {
-      // Only update state if component is still mounted
-      if (isMountedRef.current) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
@@ -450,7 +440,7 @@ const ProductCreatePage = () => {
 
       const submitData = {
         ...formData,
-        price: parseInt(formData.price, 10) || 0,
+        price: parseInt(formData.price, 10),
         userid: user && user.id
       };
 
@@ -472,10 +462,7 @@ const ProductCreatePage = () => {
       console.error('Failed to save product:', error);
       alert('상품 저장에 실패했습니다. 다시 시도해주세요.');
     } finally {
-      // Only update state if component is still mounted
-      if (isMountedRef.current) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 

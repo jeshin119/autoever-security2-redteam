@@ -123,10 +123,6 @@ export const productService = {
       });
       // 나머지 필드(문자열로 넣어도 multer가 body로 잘 받습니다)
       Object.entries(productData).forEach(([k, v]) => {
-        // null이나 undefined는 건너뛰기
-        if (v === null || v === undefined) {
-          return;
-        }
         // 배열/객체는 문자열로
         if (typeof v === "object") {
           fd.append(k, JSON.stringify(v));
