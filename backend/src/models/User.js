@@ -88,6 +88,24 @@ const User = sequelize.define('User', {
   tableName: 'users',
   timestamps: true,
   // Intentionally no data sanitization hooks
+  hooks: {
+    beforeSync: async (options) => {
+      // Safe migration: 기존 NULL 값들을 현재 시간으로 업데이트
+      if (options.force || options.alter) {
+        try {
+          await sequelize.query(`
+            UPDATE users 
+            SET 
+              created_at = COALESCE(created_at, NOW()),
+              updated_at = COALESCE(updated_at, NOW())
+            WHERE created_at IS NULL OR updated_at IS NULL
+          `);
+        } catch (error) {
+          console.warn('Warning: Could not update NULL timestamps in users table:', error.message);
+        }
+      }
+    }
+  }
 });
 
 // Intentionally vulnerable instance methods

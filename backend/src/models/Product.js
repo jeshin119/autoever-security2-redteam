@@ -93,6 +93,24 @@ const Product = sequelize.define('Product', {
   tableName: 'products',
   timestamps: true,
   underscored: true,
+  hooks: {
+    beforeSync: async (options) => {
+      // Safe migration: 기존 NULL 값들을 현재 시간으로 업데이트
+      if (options.force || options.alter) {
+        try {
+          await sequelize.query(`
+            UPDATE products 
+            SET 
+              created_at = COALESCE(created_at, NOW()),
+              updated_at = COALESCE(updated_at, NOW())
+            WHERE created_at IS NULL OR updated_at IS NULL
+          `);
+        } catch (error) {
+          console.warn('Warning: Could not update NULL timestamps in products table:', error.message);
+        }
+      }
+    }
+  }
 });
 
 // Set up associations
