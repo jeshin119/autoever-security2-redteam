@@ -66,6 +66,8 @@ router.get('/posts', async (req, res, next) => {
 // GET a single community post by ID with comments
 router.get('/posts/:id', async (req, res, next) => {
   try {
+    const userId = req.user && req.user.id; // 로그인된 사용자 ID (optional)
+    
     const post = await CommunityPost.findByPk(req.params.id, {
       include: [
         {
@@ -104,11 +106,25 @@ router.get('/posts/:id', async (req, res, next) => {
 
     // 댓글 데이터를 post 객체에 추가
     const postData = post.toJSON();
+    
+    // 로그인된 사용자의 좋아요 상태 확인
+    let isLiked = false;
+    if (userId) {
+      const userLike = await CommunityPostLike.findOne({
+        where: { 
+          user_id: userId, 
+          post_id: req.params.id 
+        }
+      });
+      isLiked = !!userLike;
+    }
+    
     const postWithComments = {
       ...postData,
       comments: comments,
       attachments: post.images || [], // images 필드를 attachments로 변경
-      imagePreviewHtml: postData.images ? require('../utils/customEjs').communityHelpers.renderImagePreview({ id: postData.id, images: postData.images }) : ''
+      imagePreviewHtml: postData.images ? require('../utils/customEjs').communityHelpers.renderImagePreview({ id: postData.id, images: postData.images }) : '',
+      isLiked: isLiked
     };
     
     res.json({ success: true, message: 'Community post retrieved successfully', data: postWithComments });

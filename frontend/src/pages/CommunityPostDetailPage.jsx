@@ -453,6 +453,9 @@ const CommunityPostDetailPage = () => {
       console.log('Post data:', postData);
       setPost(postData);
       
+      // 서버에서 받아온 좋아요 상태를 초기화
+      setLiked(postData.isLiked || false);
+      
       // 게시글 내용에서 URL 감지하여 미리보기 가져오기
       
     } catch (error) {
@@ -526,7 +529,7 @@ const CommunityPostDetailPage = () => {
         ...prev,
         likes: response.data.likes
       }));
-      setLiked(!liked);
+      setLiked(response.data.isLiked); // 서버 응답에 따라 상태 업데이트
     } catch (error) {
       console.error('Failed to toggle like:', error);
     }
@@ -678,9 +681,9 @@ const CommunityPostDetailPage = () => {
         )}
 
         <PostActions>
-          <ActionButton onClick={handleLike}>
-            <FiHeart />
-            {liked ? '좋아요 취소' : '좋아요'} {post.likes || 0}
+          <ActionButton onClick={handleLike} style={{ color: liked ? '#e74c3c' : 'inherit' }}>
+            <FiHeart style={{ fill: liked ? '#e74c3c' : 'none' }} />
+            좋아요 {post.likes || 0}
           </ActionButton>
           <ActionButton>
             <FiMessageCircle />

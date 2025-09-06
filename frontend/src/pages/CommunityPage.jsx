@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import styled from 'styled-components';
 import { FiMapPin, FiClock, FiMessageCircle, FiHeart, FiUsers, FiCalendar } from 'react-icons/fi';
-import { FaHeart } from 'react-icons/fa';
 import { communityService } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -445,6 +444,7 @@ const CommunityPage = () => {
         }
       });
       setLikedPosts(liked);
+      console.log('Initial liked posts:', liked);
     } catch (error) {
       console.error('Failed to fetch posts:', error);
       setPosts([]);
@@ -475,7 +475,7 @@ const CommunityPage = () => {
             : post
         ));
         
-        // 좋아요 상태 업데이트
+        // 좋아요 상태 업데이트 (토글)
         const newLikedPosts = new Set(likedPosts);
         if (response.data.isLiked) {
           newLikedPosts.add(postId);
@@ -598,9 +598,9 @@ const CommunityPage = () => {
                 <PostActions>
                   <ActionButton 
                     onClick={(e) => handlePostLike(post.id, e)}
-                    className={likedPosts.has(post.id) ? 'liked' : ''}
+                    style={{ color: likedPosts.has(post.id) ? '#e74c3c' : 'inherit' }}
                   >
-                    {likedPosts.has(post.id) ? <FaHeart /> : <FiHeart />}
+                    <FiHeart style={{ fill: likedPosts.has(post.id) ? '#e74c3c' : 'none' }} />
                     좋아요 {post.likes || 0}
                   </ActionButton>
                 </PostActions>
