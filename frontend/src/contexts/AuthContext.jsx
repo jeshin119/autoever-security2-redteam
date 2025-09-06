@@ -76,9 +76,24 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Login error:', error);
-      // Intentionally vulnerable: Exposing stack trace (Information Disclosure)
-      toast.error(`로그인 중 오류 발생: ${error.message}`);
-      return { success: false, message: error.message };
+      
+      // 401 에러인 경우 서버에서 보낸 메시지 사용
+      if (error.response && error.response.status == 401) {
+        const serverMessage = error.response.data && error.response.data.message;
+        if (serverMessage) {
+          toast.error(serverMessage);
+          return { success: false, message: serverMessage };
+        }
+        else {
+          toast.error("이메일 또는 비밀번호가 올바르지 않습니다.");
+          return { success: false, message: serverMessage };
+        }
+      }
+      
+      // 기타 에러의 경우 기본 메시지 사용
+      const userFriendlyMessage = '로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
+      toast.error(userFriendlyMessage);
+      return { success: false, message: userFriendlyMessage };
     }
   };
 

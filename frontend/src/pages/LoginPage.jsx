@@ -126,8 +126,10 @@ const LoginPage = () => {
       if (result.success) {
         history.replace(from);
       }
+      // AuthContext에서 이미 에러 토스트를 표시하므로 여기서는 추가 토스트 표시하지 않음
     } catch (error) {
       console.error('Login error:', error);
+      // AuthContext에서 이미 에러 토스트를 표시하므로 여기서는 추가 토스트 표시하지 않음
     } finally {
       // Only update state if component is still mounted
       if (isMountedRef.current) {

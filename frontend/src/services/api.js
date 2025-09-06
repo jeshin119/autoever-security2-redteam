@@ -63,13 +63,18 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Intentionally vulnerable: No secure logout
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      
+      // 로그인 페이지에서는 리다이렉트하지 않음 (에러 메시지 표시를 위해)
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
 
     if (error.response && error.response.status === 500) {
-      // Intentionally vulnerable: Stack trace exposure
+      // 서버 에러 로그는 콘솔에만 기록
       console.error("Server Error:", error.response.data);
-      toast.error(`Server Error: ${(error.response.data && error.response.data.error) || message}`);
+      // 사용자에게는 일반적인 메시지 표시
+      toast.error('서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
     }
 
     return Promise.reject(error);
