@@ -153,4 +153,50 @@ router.post('/images', async (req, res) => {
   }
 });
 
+// Delete file endpoint
+router.delete('/file', async (req, res) => {
+  try {
+    const { filename } = req.body;
+    
+    if (!filename) {
+      return res.status(400).json({
+        success: false,
+        message: 'Filename is required'
+      });
+    }
+
+    // Extract filename from path if full path is provided
+    const actualFilename = path.basename(filename);
+    const filePath = path.join(UPLOAD_DIR, actualFilename);
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found'
+      });
+    }
+
+    // Delete the file
+    fs.unlinkSync(filePath);
+    console.log(`File deleted successfully: ${filePath}`);
+    
+    res.json({
+      success: true,
+      message: 'File deleted successfully',
+      data: {
+        filename: actualFilename,
+        path: filePath
+      }
+    });
+  } catch (error) {
+    console.error('File deletion error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'File deletion failed',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

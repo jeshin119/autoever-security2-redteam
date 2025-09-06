@@ -391,8 +391,30 @@ const CommunityPostCreatePage = () => {
     e.currentTarget.classList.remove('dragover');
   };
 
-  const removeFile = (fileId) => {
-    setAttachedFiles(prev => prev.filter(file => file.id !== fileId));
+  const removeFile = async (fileId) => {
+    try {
+      // Find the file to be removed
+      const fileToRemove = attachedFiles.find(file => file.id === fileId);
+      
+      if (fileToRemove && fileToRemove.url) {
+        // Extract filename from URL (e.g., "/uploads/filename.jpg" -> "filename.jpg")
+        const filename = fileToRemove.url.split('/').pop();
+        
+        // Delete file from server
+        await uploadService.deleteFile(filename);
+        console.log(`File deleted from server: ${filename}`);
+      }
+      
+      // Remove file from state
+      setAttachedFiles(prev => prev.filter(file => file.id !== fileId));
+      toast.success('파일이 삭제되었습니다.');
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast.error('파일 삭제에 실패했습니다.');
+      
+      // Even if server deletion fails, remove from UI state
+      setAttachedFiles(prev => prev.filter(file => file.id !== fileId));
+    }
   };
 
   const handleSubmit = async (e) => {

@@ -253,6 +253,11 @@ export const uploadService = {
       },
     });
   },
+  deleteFile: (filename) => {
+    return api.delete("/upload/file", {
+      data: { filename }
+    });
+  },
 };
 
 export const downloadService = {

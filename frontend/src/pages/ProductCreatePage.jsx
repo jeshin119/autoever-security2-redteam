@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { FiUpload, FiX, FiMapPin, FiDollarSign, FiTag } from 'react-icons/fi';
-import { productService, getImageUrl } from '../services/api';
+import { productService, getImageUrl, uploadService } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
 const Container = styled.div`
@@ -401,14 +401,39 @@ const ProductCreatePage = () => {
     });
   };
 
-  const removeImage = (imageId, isExisting = false) => {
-    if (isExisting) {
-      setFormData(prev => ({
-        ...prev,
-        images: prev.images.filter((_, index) => index !== imageId)
-      }));
-    } else {
-      setImageFiles(prev => prev.filter(img => img.id !== imageId));
+  const removeImage = async (imageId, isExisting = false) => {
+    try {
+      if (isExisting) {
+        // For existing images, extract filename from the image path
+        const imageToRemove = formData.images[imageId];
+        if (imageToRemove) {
+          // Extract filename from URL (e.g., "/uploads/filename.jpg" -> "filename.jpg")
+          const filename = imageToRemove.split('/').pop();
+          
+          // Delete file from server
+          await uploadService.deleteFile(filename);
+          console.log(`Existing image deleted from server: ${filename}`);
+        }
+        
+        setFormData(prev => ({
+          ...prev,
+          images: prev.images.filter((_, index) => index !== imageId)
+        }));
+      } else {
+        // For new images, they haven't been uploaded to server yet, so just remove from state
+        setImageFiles(prev => prev.filter(img => img.id !== imageId));
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      // Even if server deletion fails, remove from UI state
+      if (isExisting) {
+        setFormData(prev => ({
+          ...prev,
+          images: prev.images.filter((_, index) => index !== imageId)
+        }));
+      } else {
+        setImageFiles(prev => prev.filter(img => img.id !== imageId));
+      }
     }
   };
 
