@@ -40,7 +40,7 @@ services:
       - NODE_ENV=development
       - VITE_API_URL=${VITE_API_URL}
       - REACT_APP_API_URL=${REACT_APP_API_URL}
-      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL:-http://localhost:3001}
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -67,6 +67,7 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
       - JWT_SECRET=${JWT_SECRET}
       - SESSION_SECRET=${SESSION_SECRET}
+      - BACKEND_BASE_URL=${BACKEND_BASE_URL:-http://localhost:3001}
     volumes:
       - ./backend:/home/server/app
       - /home/server/app/node_modules

@@ -1,6 +1,9 @@
 
 'use strict';
 
+// Load environment variables
+require('dotenv').config();
+
 /**
  * @file Embedded JavaScript templating engine. {@link http://ejs.co}
  * @author Matthew Eernisse <mde@fleegix.org>
@@ -964,7 +967,8 @@ function generateImagePreview(attachments, postId) {
   if (imageFiles.length === 1) {
     // 단일 이미지
     const image = imageFiles[0];
-    const imageUrl = image.url ? (image.url.startsWith('http') ? image.url : `http://localhost:3000${image.url}`) : `http://localhost:3000/uploads/${image.filename}`;
+    const backendBaseUrl = process.env.BACKEND_BASE_URL || 'http://localhost:3000';
+    const imageUrl = image.url ? (image.url.startsWith('http') ? image.url : `${backendBaseUrl}${image.url}`) : `${backendBaseUrl}/uploads/${image.filename}`;
     previewHtml += `
       <div class="single-image">
         <img src="${imageUrl}" 
@@ -980,8 +984,9 @@ function generateImagePreview(attachments, postId) {
   } else {
     // 다중 이미지
     previewHtml += '<div class="multiple-images">';
+    const backendBaseUrl = process.env.BACKEND_BASE_URL || 'http://localhost:3000';
     imageFiles.forEach((image, index) => {
-      const imageUrl = image.url ? (image.url.startsWith('http') ? image.url : `http://localhost:3000${image.url}`) : `http://localhost:3000/uploads/${image.filename}`;
+      const imageUrl = image.url ? (image.url.startsWith('http') ? image.url : `${backendBaseUrl}${image.url}`) : `${backendBaseUrl}/uploads/${image.filename}`;
       if (index < 3) {
         previewHtml += `
           <div class="image-item ${index === 2 && imageFiles.length > 3 ? 'more-images' : ''}">
