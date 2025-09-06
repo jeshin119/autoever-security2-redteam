@@ -84,22 +84,28 @@ const io = socketio(httpServer, {
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
-  socket.on('joinRoom', (roomId) => {
+  socket.on('joinRoom', (data) => {
+    const roomId = data.productId; // Assuming productId is the roomId
+    const userId = data.userId;
     socket.join(roomId);
-    console.log(`User ${socket.id} joined room ${roomId}`);
+    console.log(`[Socket.IO] User ${userId} (socket: ${socket.id}) joined room ${roomId}`);
+    // Optionally, you can fetch and send chat history to the newly joined user
+    // This part is already handled by the client's fetchChatHistory, but can be done here too.
   });
 
   socket.on('sendMessage', async (data) => {
+    console.log(`[Socket.IO] Received sendMessage from ${socket.id}:`, data);
     try {
       const message = await ChatMessage.create({
-        sender_id: data.sender_id,
-        receiver_id: data.receiver_id,
-        product_id: data.product_id,
+        sender_id: data.senderId,
+        receiver_id: data.receiverId,
+        product_id: data.productId,
         message: data.message,
       });
-      io.to(data.roomId).emit('receiveMessage', message);
+      console.log(`[Socket.IO] Emitting message to room ${data.productId}:`, message);
+      io.to(data.productId).emit('message', message);
     } catch (error) {
-      console.error('Error saving message:', error);
+      console.error('[Socket.IO] Error saving message:', error);
     }
   });
 
