@@ -61,6 +61,7 @@ const App = () => {
             <Route exact path="/products" component={ProductListPage} />
             <Route exact path="/community" component={CommunityPage} />
             <PrivateRoute exact path="/community/new" component={CommunityPostCreatePage} />
+            <PrivateRoute exact path="/community/:id/edit" component={CommunityPostCreatePage} />
             <Route exact path="/community/:id" component={CommunityPostDetailPage} />
             <Route exact path="/community/posts/:postId" component={CommunityPostDetailPage} />
             <Route exact path="/search" component={SearchPage} />

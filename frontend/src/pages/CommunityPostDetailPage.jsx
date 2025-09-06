@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import {
   FiArrowLeft, FiUser, FiClock, FiMessageCircle, FiHeart, FiShare2,
   FiMapPin, FiEye, FiCalendar, FiUsers, FiSend, FiTrash2, FiFile, 
-  FiDownload, FiImage, FiExternalLink
+  FiDownload, FiImage, FiExternalLink, FiEdit
 } from 'react-icons/fi';
 import { getImageUrl } from '../services/api';
 import { communityService, downloadService } from '../services/api';
@@ -535,6 +535,22 @@ const CommunityPostDetailPage = () => {
     }
   };
 
+  const handlePostDelete = async () => {
+    if (!user) return;
+
+    if (!window.confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await communityService.deletePost(id);
+      history.push('/community');
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+      alert('게시글 삭제에 실패했습니다.');
+    }
+  };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR', {
@@ -693,6 +709,25 @@ const CommunityPostDetailPage = () => {
             <FiShare2 />
             공유
           </ActionButton>
+          
+          {user && post.author && user.id === post.author.id && (
+            <>
+              <ActionButton
+                onClick={() => history.push(`/community/${post.id}/edit`)}
+                style={{ color: '#007bff' }}
+              >
+                <FiEdit />
+                수정
+              </ActionButton>
+              <ActionButton
+                onClick={handlePostDelete}
+                style={{ color: '#dc3545' }}
+              >
+                <FiTrash2 />
+                삭제
+              </ActionButton>
+            </>
+          )}
         </PostActions>
       </PostContainer>
 
