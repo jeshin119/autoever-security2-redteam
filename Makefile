@@ -64,7 +64,7 @@ dev: ## Start development environment with Docker (localhost URLs)
 	@echo "🔄 Starting database..."
 	@docker-compose up -d database
 	@echo "⏳ Waiting for database to be healthy..."
-	@until [ "$$(docker inspect -f '{{.State.Health.Status}}' $(docker-compose ps -q database))" = "healthy" ]; do \
+	@until [ "$$(docker inspect -f '{{.State.Health.Status}}' vintage-market-mysql)" = "healthy" ]; do \
 		sleep 2; \
 		echo "  Still waiting for database..."; \
 	done

@@ -331,8 +331,8 @@ CREATE TABLE `transactions` (
 --
 
 INSERT INTO `transactions` (`id`, `buyer_id`, `seller_id`, `product_id`, `amount`, `status`, `payment_method`, `created_at`, `updated_at`, `payment_data`, `transaction_id`, `notes`, `refund_reason`, `refund_amount`, `completed_at`, `cancelled_at`, `refunded_at`) VALUES
-(1, 6, 2, 4, 80000.00, 'completed', 'credits', '2025-09-05 01:38:24', '2025-09-05 01:38:24', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(2, 6, 3, 2, 150000.00, 'completed', 'credits', '2025-09-05 01:58:51', '2025-09-05 01:58:51', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+(1, 5, 2, 4, 80000.00, 'completed', 'credits', '2025-09-05 01:38:24', '2025-09-05 01:38:24', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(2, 5, 3, 2, 150000.00, 'completed', 'credits', '2025-09-05 01:58:51', '2025-09-05 01:58:51', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
