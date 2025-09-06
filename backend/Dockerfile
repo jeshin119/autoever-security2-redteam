@@ -1,12 +1,8 @@
 FROM ubuntu:18.04
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 🔑 bionic 저장소를 다른 미러로 강제 변경 (working alternatives)
-RUN echo "deb http://mirror.kakao.com/ubuntu/ bionic main restricted universe multiverse" > /etc/apt/sources.list \
- && echo "deb http://mirror.kakao.com/ubuntu/ bionic-updates main restricted universe multiverse" >> /etc/apt/sources.list \
- && echo "deb http://mirror.kakao.com/ubuntu/ bionic-backports main restricted universe multiverse" >> /etc/apt/sources.list \
- && echo "deb http://mirror.kakao.com/ubuntu/ bionic-security main restricted universe multiverse" >> /etc/apt/sources.list \
- && apt-get update && apt-get install -y \
+# 🔑 Use default Ubuntu repositories which support multi-architecture
+RUN apt-get update && apt-get install -y \
     curl \
     sudo \
     python3 \

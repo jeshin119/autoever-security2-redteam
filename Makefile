@@ -61,7 +61,7 @@ test: ## Run tests in all workspaces
 dev: ## Start development environment with Docker (localhost URLs)
 	@echo "🛠️ Starting development environment with localhost URLs..."
 	@cp .env.dev .env
-	@docker-compose up --build -d frontend backend database phpmyadmin
+	@docker-compose up --build --force-recreate -d frontend backend database phpmyadmin
 	@echo "✅ Development environment started!"
 	@echo "Frontend: http://localhost:5173"
 	@echo "Backend: http://localhost:3001"
