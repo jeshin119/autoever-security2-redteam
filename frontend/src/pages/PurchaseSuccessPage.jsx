@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useHistory, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { 
   FiCheckCircle, 
@@ -314,8 +314,8 @@ const DiscountText = styled.span`
 `;
 
 const PurchaseSuccessPage = function() {
-  var searchParams = useSearchParams()[0];
-  var navigate = useNavigate();
+  var searchParams = new URLSearchParams(useLocation().search);
+  var navigate = useHistory().push;
   var user = useAuth().user;
   var productId = searchParams.get('productId');
   var transactionId = searchParams.get('transactionId');

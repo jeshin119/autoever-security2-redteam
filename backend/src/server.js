@@ -7,8 +7,23 @@ const session = require('express-session');
 const fileupload = require("express-fileupload");
 const path = require('path');
 const { createServer } = require('http');
+const socketio = require('socket.io');
 const PortManager = require('./utils/portManager');
 require('dotenv').config();
+
+const { connectDB, sequelize } = require('./config/database');
+
+// Import models
+const User = require('./models/User');
+const Product = require('./models/Product');
+const Transaction = require('./models/Transaction');
+const CommunityPost = require('./models/CommunityPost');
+const Comment = require('./models/Comment');
+const Coupon = require('./models/Coupon');
+const UserCoupon = require('./models/UserCoupon');
+const UserLikes = require('./models/UserLikes');
+const CommunityPostLike = require('./models/CommunityPostLike');
+const ChatMessage = require('./models/ChatMessage');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -25,18 +40,6 @@ const downloadRoutes = require('./routes/download');
 // Import middleware
 const authenticateToken = require('./middleware/authenticateToken');
 const errorHandler = require('./middleware/errorHandler');
-const { connectDB, sequelize } = require('./config/database');
-
-// Import models for health check
-const User = require('./models/User');
-const Product = require('./models/Product');
-const Transaction = require('./models/Transaction');
-const CommunityPost = require('./models/CommunityPost');
-const Comment = require('./models/Comment');
-const Coupon = require('./models/Coupon');
-const UserCoupon = require('./models/UserCoupon');
-const UserLikes = require('./models/UserLikes');
-const CommunityPostLike = require('./models/CommunityPostLike');
 
 // Initialize model associations
 const models = { 
@@ -48,12 +51,13 @@ const models = {
   Coupon, 
   UserCoupon, 
   UserLikes, 
-  CommunityPostLike 
+  CommunityPostLike, 
+  ChatMessage
 };
 
 // Set up associations after all models are loaded
 Object.keys(models).forEach(modelName => {
-  if (models[modelName].associate) {
+  if (models[modelName] && models[modelName].associate) {
     models[modelName].associate(models);
   }
 });
@@ -70,12 +74,45 @@ app.locals.ejs = customEjs;
 app.locals.communityHelpers = customEjs.communityHelpers;
 
 const httpServer = createServer(app);
-// const io = socketio(httpServer, {
-//   cors: {
-//     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-//     credentials: true
-//   }
-// });
+const io = socketio(httpServer, {
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    credentials: true
+  }
+});
+
+io.on('connection', (socket) => {
+  console.log('A user connected:', socket.id);
+
+  socket.on('joinRoom', (data) => {
+    const roomId = data.productId; // Assuming productId is the roomId
+    const userId = data.userId;
+    socket.join(roomId);
+    console.log(`[Socket.IO] User ${userId} (socket: ${socket.id}) joined room ${roomId}`);
+    // Optionally, you can fetch and send chat history to the newly joined user
+    // This part is already handled by the client's fetchChatHistory, but can be done here too.
+  });
+
+  socket.on('sendMessage', async (data) => {
+    console.log(`[Socket.IO] Received sendMessage from ${socket.id}:`, data);
+    try {
+      const message = await ChatMessage.create({
+        sender_id: data.senderId,
+        receiver_id: data.receiverId,
+        product_id: data.productId,
+        message: data.message,
+      });
+      console.log(`[Socket.IO] Emitting message to room ${data.productId}:`, message);
+      io.to(data.productId).emit('message', message);
+    } catch (error) {
+      console.error('[Socket.IO] Error saving message:', error);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
 
 // Connect to database and initialize models
 async function initializeApp() {
@@ -220,7 +257,7 @@ app.use('/uploads', (req, res, next) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/chat', chatRoutes);
+app.use('/api/chat', authenticateToken, chatRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/notifications', notificationRoutes);
 

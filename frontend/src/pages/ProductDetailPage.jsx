@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import {
   FiArrowLeft, FiHeart, FiShare2, FiShoppingCart,
   FiMapPin, FiEye, FiClock, FiUser, FiTag, FiShield,
-  FiEdit3, FiTrash2
+  FiEdit3, FiTrash2, FiMessageCircle
 } from 'react-icons/fi';
 import { productService, getImageUrl } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -750,30 +750,19 @@ const ProductDetailPage = () => {
       history.push('/login');
       return;
     }
-
     try {
-      const newLikedState = !isLiked;
-      setIsLiked(newLikedState);
-
-      if (newLikedState) {
-        await productService.likeProduct(id);
-        // Update product likes count locally
+      const response = await productService.toggleLike(id);
+      if (response.data && response.data.success) {
+        setIsLiked(response.data.data.isLiked);
+        // Optimistically update likes count
         setProduct(prev => ({
           ...prev,
-          likes: (prev.likes || 0) + 1
-        }));
-      } else {
-        await productService.unlikeProduct(id);
-        // Update product likes count locally
-        setProduct(prev => ({
-          ...prev,
-          likes: Math.max((prev.likes || 0) - 1, 0)
+          likes: response.data.data.isLiked ? (prev.likes || 0) + 1 : (prev.likes || 1) - 1
         }));
       }
     } catch (error) {
       console.error('Failed to toggle like:', error);
-      // Revert the like state if API call fails
-      setIsLiked(!isLiked);
+      alert('좋아요 처리에 실패했습니다.');
     }
   };
 
@@ -789,6 +778,18 @@ const ProductDetailPage = () => {
       navigator.clipboard.writeText(window.location.href);
       alert('링크가 클립보드에 복사되었습니다.');
     }
+  };
+
+  const handleChatClick = () => {
+    if (!user) {
+      history.push('/login');
+      return;
+    }
+    if (user.id === product.userId) {
+      alert('자신과는 채팅할 수 없습니다.');
+      return;
+    }
+    history.push(`/chat?userId=${product.userId}&productId=${product.id}`);
   };
 
   const formatPrice = (price) => {
@@ -921,6 +922,14 @@ const ProductDetailPage = () => {
             >
               <FiShoppingCart />
               {product.isSold ? '판매완료' : '구매하기'}
+            </PrimaryButton>
+            <PrimaryButton 
+              onClick={handleChatClick}
+              disabled={product.isSold || (user && user.id === product.userId)}
+              style={{flex: 0.5, background: '#555'}}
+            >
+              <FiMessageCircle />
+              채팅하기
             </PrimaryButton>
             <SecondaryButton onClick={handleLikeToggle}>
               <FiHeart color={isLiked ? '#ff4757' : 'currentColor'} />
