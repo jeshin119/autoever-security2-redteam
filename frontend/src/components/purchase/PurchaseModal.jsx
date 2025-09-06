@@ -283,6 +283,15 @@ const TextArea = styled.textarea`
   }
 `;
 
+const ErrorMessage = styled.div`
+  color: #dc3545;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
 const CouponSection = styled.div`
   display: flex;
   gap: 0.75rem;
@@ -385,6 +394,7 @@ const PurchaseModal = ({
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponLoading, setCouponLoading] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
 
   if (!isOpen || !product) return null;
 
@@ -407,11 +417,27 @@ const PurchaseModal = ({
   const remainingCredits = userCredits - totalAfterDiscount;
   const hasInsufficientCredits = remainingCredits < 0;
 
+  // 전화번호 검증 정규표현식
+  const validatePhoneNumber = (phone) => {
+    // 한국 휴대폰 번호: 010-XXXX-XXXX 형식
+    const phoneRegex = /^(01[0-9])?-?(\d+)*-?(\d+)*$/;
+    return phoneRegex.test(phone);
+  };
+
   const handleInputChange = (field, value) => {
     setDeliveryInfo(prev => ({
       ...prev,
       [field]: value
     }));
+    
+    // 전화번호 유효성 검사
+    if (field === 'phone') {
+      if (value && !validatePhoneNumber(value)) {
+        setPhoneError('전화번호는 010-XXXX-XXXX 형식으로 입력해주세요');
+      } else {
+        setPhoneError('');
+      }
+    }
   };
 
   const handleCouponApply = async () => {
@@ -445,6 +471,12 @@ const PurchaseModal = ({
     
     if (missingFields.length > 0) {
       alert('배송 정보를 모두 입력해주세요.');
+      return;
+    }
+    
+    // 전화번호 유효성 검증
+    if (!validatePhoneNumber(deliveryInfo.phone)) {
+      alert('전화번호를 올바른 형식(010-XXXX-XXXX)으로 입력해주세요.');
       return;
     }
     
@@ -514,7 +546,16 @@ const PurchaseModal = ({
                 value={deliveryInfo.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
                 placeholder="010-1234-5678"
+                style={{ 
+                  borderColor: phoneError ? '#dc3545' : undefined 
+                }}
               />
+              {phoneError && (
+                <ErrorMessage>
+                  <FiAlertCircle size={14} />
+                  {phoneError}
+                </ErrorMessage>
+              )}
             </InputGroup>
 
             <InputGroup>
