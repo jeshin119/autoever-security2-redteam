@@ -120,7 +120,7 @@ User.associate = function(models) {
   // User has many Products (as seller)
   if (models.Product) {
     User.hasMany(models.Product, {
-      foreignKey: 'seller_id',
+      foreignKey: 'userId',
       as: 'Products',
       onDelete: 'RESTRICT',  // 사용자에게 상품이 있으면 삭제 방지
       onUpdate: 'CASCADE'
@@ -158,7 +158,7 @@ User.associate = function(models) {
   // User has many UserLikes
   if (models.UserLikes) {
     User.hasMany(models.UserLikes, {
-      foreignKey: 'user_id',
+      foreignKey: 'userId',
       as: 'UserLikes',
       onDelete: 'CASCADE',   // 사용자 삭제 시 좋아요도 함께 삭제
       onUpdate: 'CASCADE'

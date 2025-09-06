@@ -66,6 +66,8 @@ router.get('/posts', async (req, res, next) => {
 // GET a single community post by ID with comments
 router.get('/posts/:id', async (req, res, next) => {
   try {
+    const userId = req.user && req.user.id; // 로그인된 사용자 ID (optional)
+    
     const post = await CommunityPost.findByPk(req.params.id, {
       include: [
         {
@@ -87,7 +89,7 @@ router.get('/posts/:id', async (req, res, next) => {
       include: [
         {
           model: User,
-          as: 'author',
+          as: 'commentAuthor',
           attributes: ['id', 'name', 'email']
         }
       ],
@@ -104,15 +106,134 @@ router.get('/posts/:id', async (req, res, next) => {
 
     // 댓글 데이터를 post 객체에 추가
     const postData = post.toJSON();
+    
+    // 로그인된 사용자의 좋아요 상태 확인
+    let isLiked = false;
+    if (userId) {
+      const userLike = await CommunityPostLike.findOne({
+        where: { 
+          user_id: userId, 
+          post_id: req.params.id 
+        }
+      });
+      isLiked = !!userLike;
+    }
+    
     const postWithComments = {
       ...postData,
       comments: comments,
       attachments: post.images || [], // images 필드를 attachments로 변경
-      imagePreviewHtml: postData.images ? require('../utils/customEjs').communityHelpers.renderImagePreview({ id: postData.id, images: postData.images }) : ''
+      imagePreviewHtml: postData.images ? require('../utils/customEjs').communityHelpers.renderImagePreview({ id: postData.id, images: postData.images }) : '',
+      isLiked: isLiked
     };
     
     res.json({ success: true, message: 'Community post retrieved successfully', data: postWithComments });
   } catch (error) {
+    next(error);
+  }
+});
+
+// PUT update community post
+router.put('/posts/:id', authenticateToken, async (req, res, next) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.user.id;
+    const { title, content, category, location, attachments } = req.body;
+
+    // Check if post exists and user is the author
+    const existingPost = await CommunityPost.findByPk(postId);
+    if (!existingPost) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    if (existingPost.user_id !== userId) {
+      return res.status(403).json({ success: false, message: 'Not authorized to edit this post' });
+    }
+
+    if (!title || !content || !category || !location) {
+      return res.status(400).json({ success: false, message: 'Title, content, category, and location are required' });
+    }
+
+    let attachmentsData = [];
+
+    // 기존 attachments가 있으면 사용
+    if (attachments && Array.isArray(attachments)) {
+      attachmentsData = attachments;
+    }
+
+    // 업로드된 파일이 있으면 처리
+    if (req.files && req.files.images) {
+      const uploadPath = require('path').join(__dirname, '../uploads/');
+      const fs = require('fs');
+      
+      if (!fs.existsSync(uploadPath)) {
+        fs.mkdirSync(uploadPath, { recursive: true });
+      }
+      
+      const files = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+      
+      for (const file of files) {
+        // Generate unique filename to handle duplicates
+        const generateUniqueFilename = (originalName, uploadDir) => {
+          const path = require('path');
+          const fs = require('fs');
+          const nameWithoutExt = path.parse(originalName).name;
+          const extension = path.parse(originalName).ext;
+          
+          let counter = 0;
+          let filename = originalName;
+          
+          while (fs.existsSync(path.join(uploadDir, filename))) {
+            counter++;
+            filename = `${nameWithoutExt} (${counter})${extension}`;
+          }
+          
+          return filename;
+        };
+        
+        const filename = generateUniqueFilename(file.name, uploadPath);
+        const filePath = require('path').join(uploadPath, filename);
+        
+        await file.mv(filePath);
+        
+        attachmentsData.push({
+          filename: filename,
+          originalName: file.name,
+          url: `/uploads/${filename}`,
+          size: file.size,
+          mimetype: file.mimetype
+        });
+      }
+    }
+
+    // Update the post
+    await existingPost.update({
+      title,
+      content,
+      category,
+      location,
+      images: attachmentsData
+    });
+
+    // Get updated post with author info
+    const updatedPost = await CommunityPost.findByPk(postId, {
+      include: [{
+        model: User,
+        as: 'author',
+        attributes: ['id', 'name', 'email']
+      }]
+    });
+
+    const postData = updatedPost.toJSON();
+    const responseData = {
+      ...postData,
+      attachments: attachmentsData,
+      imagePreviewHtml: attachmentsData.length > 0 ? require('../utils/customEjs').communityHelpers.renderImagePreview({ id: postData.id, images: attachmentsData }) : ''
+    };
+
+    res.json({ success: true, message: 'Community post updated successfully', data: responseData });
+  } catch (error) {
+    console.error('Error updating community post:', error);
     next(error);
   }
 });
@@ -235,13 +356,13 @@ router.post('/posts/:id/comments', authenticateToken, async (req, res, next) => 
     const commentWithAuthor = await Comment.findByPk(comment.id, {
       include: [{
         model: User,
-        as: 'author',
+        as: 'commentAuthor',
         attributes: ['id', 'name', 'email']
       }]
     });
 
     console.log('Comment with author:', commentWithAuthor.toJSON());
-    console.log('Author info:', commentWithAuthor.author);
+    console.log('Author info:', commentWithAuthor.commentAuthor);
 
     // Ensure the response has the correct structure
     const responseData = {
@@ -252,7 +373,7 @@ router.post('/posts/:id/comments', authenticateToken, async (req, res, next) => 
       parent_id: commentWithAuthor.parent_id,
       createdAt: commentWithAuthor.createdAt,
       updatedAt: commentWithAuthor.updatedAt,
-      author: commentWithAuthor.author
+      author: commentWithAuthor.commentAuthor
     };
 
     console.log('Final response data:', responseData);
@@ -342,6 +463,37 @@ router.delete('/comments/:id', authenticateToken, async (req, res, next) => {
     await CommunityPost.decrement('comments_count', { where: { id: postId } });
 
     res.json({ success: true, message: 'Comment deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Delete community post
+router.delete('/posts/:id', authenticateToken, async (req, res, next) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.user.id;
+
+    const post = await CommunityPost.findByPk(postId);
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'Post not found' });
+    }
+
+    // Check if user is the author of the post
+    if (post.user_id !== userId) {
+      return res.status(403).json({ success: false, message: 'Not authorized to delete this post' });
+    }
+
+    // Delete all comments associated with this post
+    await Comment.destroy({ where: { post_id: postId } });
+
+    // Delete all likes associated with this post
+    await CommunityPostLike.destroy({ where: { post_id: postId } });
+
+    // Delete the post
+    await post.destroy();
+
+    res.json({ success: true, message: 'Post deleted successfully' });
   } catch (error) {
     next(error);
   }

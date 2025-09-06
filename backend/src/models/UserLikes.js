@@ -7,14 +7,16 @@ const UserLikes = sequelize.define('UserLikes', {
     primaryKey: true,
     autoIncrement: true
   },
-  user_id: {
+  userId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'user_id',
     // Intentionally no foreign key constraint
   },
-  product_id: {
+  productId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'product_id',
     // Intentionally no foreign key constraint
   }
 }, {
@@ -45,13 +47,13 @@ const UserLikes = sequelize.define('UserLikes', {
 UserLikes.associate = function(models) {
   // UserLikes belongs to User
   UserLikes.belongsTo(models.User, {
-    foreignKey: 'user_id',
+    foreignKey: 'userId',
     as: 'likedByUser'
   });
   
   // UserLikes belongs to Product
   UserLikes.belongsTo(models.Product, {
-    foreignKey: 'product_id',
+    foreignKey: 'productId',
     as: 'product'
   });
 };

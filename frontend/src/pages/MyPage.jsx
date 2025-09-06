@@ -669,10 +669,12 @@ const MyPage = () => {
               {activeTab === 'selling' && !product.isSold && (
                 <ProductActions>
                   <ActionIcon
-                    as={Link}
-                    to={`/products/${product.id}/edit`}
                     title="수정"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      history.push(`/products/${product.id}/edit`);
+                    }}
                   >
                     <FiEdit size={14} />
                   </ActionIcon>

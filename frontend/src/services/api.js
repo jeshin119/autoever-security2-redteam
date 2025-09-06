@@ -209,6 +209,8 @@ export const communityService = {
   getPost: (postId) => api.get(`/community/posts/${postId}`),
   getPosts: (params = {}) => api.get("/community/posts", { params }),
   createPost: (postData) => api.post("/community/posts", postData),
+  updatePost: (postId, postData) => api.put(`/community/posts/${postId}`, postData),
+  deletePost: (postId) => api.delete(`/community/posts/${postId}`),
   
   // 댓글 관련
   createComment: (postId, commentData) => api.post(`/community/posts/${postId}/comments`, commentData),

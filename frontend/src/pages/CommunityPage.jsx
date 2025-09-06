@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import styled from 'styled-components';
-import { FiMapPin, FiClock, FiMessageCircle, FiHeart, FiUsers, FiCalendar } from 'react-icons/fi';
-import { FaHeart } from 'react-icons/fa';
+import { FiMapPin, FiClock, FiMessageCircle, FiHeart, FiUsers, FiCalendar, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { communityService } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -274,16 +273,6 @@ const MetaItem = styled.div`
   flex-shrink: 0;
 `;
 
-const PostActions = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid ${props => props.theme.colors.border};
-  flex-wrap: wrap;
-  overflow: hidden;
-`;
 
 const ActionButton = styled.button`
   display: flex;
@@ -304,6 +293,55 @@ const ActionButton = styled.button`
   
   &.liked {
     color: ${props => props.theme.colors.error};
+  }
+`;
+
+const PostActions = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid ${props => props.theme.colors.border};
+  flex-wrap: wrap;
+  overflow: hidden;
+`;
+
+const PostActionButtons = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  overflow: hidden;
+`;
+
+const AuthorActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const AuthorActionButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: ${props => props.theme.colors.textSecondary};
+  font-size: 0.9rem;
+  
+  &:hover {
+    background: ${props => props.theme.colors.background};
+    color: ${props => props.theme.colors.primary};
+  }
+  
+  &.delete:hover {
+    color: ${props => props.theme.colors.error};
+    background: ${props => props.theme.colors.error}10;
   }
 `;
 
@@ -445,6 +483,7 @@ const CommunityPage = () => {
         }
       });
       setLikedPosts(liked);
+      console.log('Initial liked posts:', liked);
     } catch (error) {
       console.error('Failed to fetch posts:', error);
       setPosts([]);
@@ -475,7 +514,7 @@ const CommunityPage = () => {
             : post
         ));
         
-        // 좋아요 상태 업데이트
+        // 좋아요 상태 업데이트 (토글)
         const newLikedPosts = new Set(likedPosts);
         if (response.data.isLiked) {
           newLikedPosts.add(postId);
@@ -487,6 +526,36 @@ const CommunityPage = () => {
       
     } catch (error) {
       console.error('Failed to toggle post like:', error);
+    }
+  };
+
+  const handlePostDelete = async (postId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!user) {
+      history.push('/login');
+      return;
+    }
+
+    if (!window.confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await communityService.deletePost(postId);
+      
+      // 게시글 목록에서 제거
+      setPosts(prev => prev.filter(post => post.id !== postId));
+      
+      // 좋아요 상태에서도 제거
+      const newLikedPosts = new Set(likedPosts);
+      newLikedPosts.delete(postId);
+      setLikedPosts(newLikedPosts);
+      
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+      alert('게시글 삭제에 실패했습니다.');
     }
   };
 
@@ -596,13 +665,39 @@ const CommunityPage = () => {
                 </PostLink>
                 
                 <PostActions>
-                  <ActionButton 
-                    onClick={(e) => handlePostLike(post.id, e)}
-                    className={likedPosts.has(post.id) ? 'liked' : ''}
-                  >
-                    {likedPosts.has(post.id) ? <FaHeart /> : <FiHeart />}
-                    좋아요 {post.likes || 0}
-                  </ActionButton>
+                  <PostActionButtons>
+                    <ActionButton 
+                      onClick={(e) => handlePostLike(post.id, e)}
+                      style={{ color: likedPosts.has(post.id) ? '#e74c3c' : 'inherit' }}
+                    >
+                      <FiHeart style={{ fill: likedPosts.has(post.id) ? '#e74c3c' : 'none' }} />
+                      좋아요 {post.likes || 0}
+                    </ActionButton>
+                  </PostActionButtons>
+                  
+                  {user && post.author && user.id === post.author.id && (
+                    <AuthorActions>
+                      <AuthorActionButton
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          history.push(`/community/${post.id}/edit`);
+                        }}
+                        title="수정"
+                      >
+                        <FiEdit size={14} />
+                        수정
+                      </AuthorActionButton>
+                      <AuthorActionButton
+                        className="delete"
+                        onClick={(e) => handlePostDelete(post.id, e)}
+                        title="삭제"
+                      >
+                        <FiTrash2 size={14} />
+                        삭제
+                      </AuthorActionButton>
+                    </AuthorActions>
+                  )}
                 </PostActions>
               </PostCard>
             ))

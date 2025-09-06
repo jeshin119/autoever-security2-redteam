@@ -276,7 +276,7 @@ router.get('/:id/products', async (req, res) => {
       include: [
         {
           model: User,
-          as: 'Buyer',
+          as: 'ProductBuyer',
           required: false,
           attributes: ['id', 'name', 'email']
         }
@@ -388,5 +388,6 @@ router.post('/:id/charge-credits', async (req, res) => {
     });
   }
 });
+
 
 module.exports = router;

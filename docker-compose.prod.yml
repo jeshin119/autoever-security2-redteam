@@ -1,0 +1,13 @@
+# Production override for docker-compose.yml
+# This file removes volume mounts for production deployment
+
+version: '3.8'
+
+services:
+  frontend:
+    # Remove volume mounts for production
+    volumes: []
+    
+  backend:
+    # Remove volume mounts for production
+    volumes: []

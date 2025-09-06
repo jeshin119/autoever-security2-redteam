@@ -123,7 +123,7 @@ Product.associate = function(models) {
   
   // Product belongs to User (seller)
   Product.belongsTo(models.User, {
-    foreignKey: 'seller_id',
+    foreignKey: 'userId',
     as: 'ProductSeller'
   });
   

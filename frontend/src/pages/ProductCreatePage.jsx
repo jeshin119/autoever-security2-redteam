@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useHistory, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import { FiUpload, FiX, FiMapPin, FiDollarSign, FiTag } from 'react-icons/fi';
@@ -282,6 +282,7 @@ const ProductCreatePage = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState([]);
+  const isMountedRef = useRef(true);
 
   const categories = [
     '디지털/가전',
@@ -301,6 +302,8 @@ const ProductCreatePage = () => {
   ];
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     if (!user) {
       navigate('/login');
       return;
@@ -309,6 +312,10 @@ const ProductCreatePage = () => {
     if (isEdit) {
       fetchProduct();
     }
+
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [user, id, isEdit]);
 
   const fetchProduct = async () => {
@@ -353,9 +360,13 @@ const ProductCreatePage = () => {
       });
     } catch (error) {
       console.error('Failed to fetch product:', error);
-      navigate('/');
+      if (isMountedRef.current) {
+        navigate('/');
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -460,9 +471,13 @@ const ProductCreatePage = () => {
       }
     } catch (error) {
       console.error('Failed to save product:', error);
-      alert('상품 저장에 실패했습니다. 다시 시도해주세요.');
+      if (isMountedRef.current) {
+        alert('상품 저장에 실패했습니다. 다시 시도해주세요.');
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
