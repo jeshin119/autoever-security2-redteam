@@ -131,7 +131,61 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get product by ID (intentionally vulnerable) - MOVED after search routes
+// Get popular products (is_sold = 0, ordered by likes DESC) - MUST come before /:id
+router.get('/popular', async (req, res) => {
+  try {
+    const { limit = 8 } = req.query;
+    
+    const popularProducts = await Product.findAll({
+      where: { isSold: false },
+      order: [['likes', 'DESC']],
+      limit: parseInt(limit)
+    });
+    
+    res.json({
+      success: true,
+      message: 'Popular products retrieved successfully',
+      data: popularProducts
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving popular products',
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+// Get recent products (is_sold = 0, ordered by created_at DESC) - MUST come before /:id
+router.get('/recent', async (req, res) => {
+  try {
+    const { limit = 8 } = req.query;
+    
+    const recentProducts = await Product.findAll({
+      where: { isSold: false },
+      order: [['createdAt', 'DESC']],
+      limit: parseInt(limit)
+    });
+    
+    res.json({
+      success: true,
+      message: 'Recent products retrieved successfully',
+      data: recentProducts
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving recent products',
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
+// Get product by ID (intentionally vulnerable) - MOVED after specific routes
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -595,98 +649,7 @@ router.get('/search/:query', async (req, res) => {
   }
 });
 
-// Get popular products (is_sold = 0, ordered by likes DESC)
-router.get('/popular', async (req, res) => {
-  try {
-    const { limit = 8 } = req.query;
-    
-    const popularProducts = await Product.findAll({
-      where: { isSold: false },
-      order: [['likes', 'DESC']],
-      limit: parseInt(limit)
-    });
-    
-    res.json({
-      success: true,
-      message: 'Popular products retrieved successfully',
-      data: popularProducts
-    });
-    
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving popular products',
-      error: error.message,
-      stack: error.stack
-    });
-  }
-});
 
-// Get recent products (is_sold = 0, ordered by created_at DESC)
-router.get('/recent', async (req, res) => {
-  try {
-    const { limit = 8 } = req.query;
-    
-    const recentProducts = await Product.findAll({
-      where: { isSold: false },
-      order: [['createdAt', 'DESC']],
-      limit: parseInt(limit)
-    });
-    
-    res.json({
-      success: true,
-      message: 'Recent products retrieved successfully',
-      data: recentProducts
-    });
-    
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving recent products',
-      error: error.message,
-      stack: error.stack
-    });
-  }
-});
-
-// Get product by ID (intentionally vulnerable) - MOVED here after search routes
-router.get('/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const product = await Product.findByPk(id);
-    
-    if (!product) {
-      return res.status(404).json({
-        success: false,
-        message: `Product not found with ID: ${id}`
-      });
-    }
-    
-    // Increment views (vulnerable to race conditions)
-    await product.incrementViews();
-    
-    // Get seller information (exposing sensitive data)
-    const seller = await User.findByPk(product.userId);
-    
-    res.json({
-      success: true,
-      message: 'Product retrieved successfully',
-      data: {
-        ...product.toJSON(),
-        seller: seller ? seller.toJSON() : null // Exposing all seller data
-      }
-    });
-    
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving product',
-      error: error.message,
-      stack: error.stack
-    });
-  }
-});
 
 // Like product (vulnerable to manipulation)
 router.post('/:id/like', async (req, res) => {

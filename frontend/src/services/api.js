@@ -11,6 +11,36 @@ const BACKEND_BASE_URL = process.env.REACT_APP_BACKEND_URL || "http://192.168.20
 export const getImageUrl = (imagePath) => {
   if (!imagePath) return null;
 
+  // If it's already an array, get the first image
+  if (Array.isArray(imagePath)) {
+    if (imagePath.length > 0) {
+      imagePath = imagePath[0];
+    } else {
+      return null;
+    }
+  }
+
+  // If it's a JSON string (array), parse it and get the first image
+  if (typeof imagePath === 'string' && imagePath.startsWith('[')) {
+    try {
+      const images = JSON.parse(imagePath);
+      if (Array.isArray(images) && images.length > 0) {
+        imagePath = images[0];
+      } else {
+        return null;
+      }
+    } catch (e) {
+      console.error('Error parsing image JSON:', e);
+      return null;
+    }
+  }
+
+  // Ensure imagePath is a string before calling startsWith
+  if (typeof imagePath !== 'string') {
+    console.error('imagePath is not a string:', imagePath);
+    return null;
+  }
+
   // If it's already a full URL, return as is
   if (imagePath.startsWith("http")) {
     return imagePath;

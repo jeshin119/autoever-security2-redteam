@@ -679,6 +679,17 @@ const MyPage = () => {
                     <FiEdit size={14} />
                   </ActionIcon>
                   <ActionIcon
+                    title="채팅 관리"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      history.push(`/chat?productId=${product.id}`);
+                    }}
+                    style={{background: '#28a745'}}
+                  >
+                    <FiMessageCircle size={14} />
+                  </ActionIcon>
+                  <ActionIcon
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();

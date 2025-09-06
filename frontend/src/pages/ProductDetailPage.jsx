@@ -722,6 +722,11 @@ const ProductDetailPage = () => {
     history.push(`/products/${id}/edit`);
   };
 
+  const handleChatManagement = () => {
+    // 채팅 페이지로 이동하여 해당 상품과 관련된 채팅방들을 표시
+    history.push(`/chat?productId=${id}`);
+  };
+
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
   };
@@ -993,6 +998,10 @@ const ProductDetailPage = () => {
                 <EditButton onClick={handleEditProduct}>
                   <FiEdit3 />
                   수정하기
+                </EditButton>
+                <EditButton onClick={handleChatManagement} style={{background: '#28a745'}}>
+                  <FiMessageCircle />
+                  채팅 관리
                 </EditButton>
                 <DeleteButton onClick={handleDeleteClick}>
                   <FiTrash2 />

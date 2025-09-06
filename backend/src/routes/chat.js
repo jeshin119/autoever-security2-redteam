@@ -33,7 +33,7 @@ router.get('/rooms', async (req, res) => {
           timestamp: msg.createdAt,
           productTitle: msg.Product ? msg.Product.title : null,
           productPrice: msg.Product ? msg.Product.price : null,
-          productImage: msg.Product && msg.Product.images ? JSON.parse(msg.Product.images)[0] : null,
+          productImage: msg.Product && msg.Product.images ? msg.Product.images : null,
           productId: msg.product_id
         };
       }
@@ -75,7 +75,7 @@ router.post('/rooms/get-or-create', async (req, res) => {
       profile_image: otherUser.profile_image,
       productTitle: product.title,
       productPrice: product.price,
-      productImage: product.images ? JSON.parse(product.images)[0] : null,
+      productImage: product.images ? product.images : null,
       productId: product.id,
       partnerId: otherUser.id,
       // Indicate if it's an existing chat or a new one

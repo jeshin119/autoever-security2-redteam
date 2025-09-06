@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { FiSend, FiImage, FiArrowLeft, FiMoreHorizontal } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { chatService, getImageUrl } from '../services/api';
+import io from 'socket.io-client';
 
 const Container = styled.div`
   height: calc(100vh - 60px);
@@ -306,10 +307,136 @@ const ChatPage = () => {
   const [showChat, setShowChat] = useState(false);
   const [currentMessage, setCurrentMessage] = useState('');
   const [messages, setMessages] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [socket, setSocket] = useState(null);
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [chatRooms, setChatRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
+
+  // Initialize Socket.IO connection
+  useEffect(() => {
+    if (user && user.id) {
+      const newSocket = io('http://localhost:3001', {
+        transports: ['polling', 'websocket'], // polling을 먼저 시도
+        timeout: 20000,
+        forceNew: true,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        upgrade: true, // polling에서 websocket으로 업그레이드 허용
+        rememberUpgrade: false // 업그레이드 기억하지 않음
+      });
+      
+      setSocket(newSocket);
+      
+      // Connection event handlers
+      newSocket.on('connect', () => {
+        console.log('Socket.IO connected:', newSocket.id);
+        setIsSocketConnected(true);
+      });
+      
+      newSocket.on('connect_error', (error) => {
+        console.error('Socket.IO connection error:', error);
+        console.log('Socket.IO: Attempting to reconnect with polling only...');
+        
+        // WebSocket 실패 시 polling만 사용하여 재연결 시도
+        if (error.message && error.message.includes('websocket')) {
+          setTimeout(() => {
+            newSocket.io.opts.transports = ['polling'];
+            newSocket.connect();
+          }, 2000);
+        }
+      });
+      
+      newSocket.on('disconnect', (reason) => {
+        console.log('Socket.IO disconnected:', reason);
+        setIsSocketConnected(false);
+        setOnlineUsers(new Set()); // 연결이 끊어지면 모든 온라인 상태 초기화
+      });
+      
+      newSocket.on('reconnect', (attemptNumber) => {
+        console.log('Socket.IO reconnected after', attemptNumber, 'attempts');
+      });
+      
+      newSocket.on('reconnect_error', (error) => {
+        console.error('Socket.IO reconnection error:', error);
+      });
+      
+      // Listen for user status changes
+      newSocket.on('userJoinedRoom', (data) => {
+        console.log('Received userJoinedRoom event:', data);
+        setOnlineUsers(prev => {
+          const newSet = new Set([...prev, data.userId]);
+          console.log('Updated online users:', Array.from(newSet));
+          return newSet;
+        });
+      });
+      
+      newSocket.on('userLeftRoom', (data) => {
+        // console.log('Received userLeftRoom event:', data);
+        setOnlineUsers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(data.userId);
+          console.log('Updated online users after user left:', Array.from(newSet));
+          return newSet;
+        });
+      });
+      
+      // Handle initial users in room when joining
+      newSocket.on('usersInRoom', (data) => {
+        console.log('Received usersInRoom event:', data);
+        setOnlineUsers(prev => {
+          const newSet = new Set([...prev, ...data.userIds]);
+          console.log('Updated online users from usersInRoom:', Array.from(newSet));
+          return newSet;
+        });
+      });
+      
+      // Handle real-time messages
+      newSocket.on('message', (data) => {
+        console.log('Received real-time message:', data);
+        setMessages(prev => {
+          // Skip messages sent by current user (we already have optimistic update)
+          if (data.sender_id === (user && user.id)) {
+            console.log('Skipping own message from Socket.IO:', data.id);
+            return prev;
+          }
+          
+          // Check if message already exists (avoid duplicates)
+          const exists = prev.some(msg => msg.id === data.id);
+          if (exists) {
+            console.log('Message already exists, skipping:', data.id);
+            return prev;
+          }
+          
+          const newMessage = {
+            id: data.id,
+            text: data.message,
+            isOwn: data.sender_id === (user && user.id),
+            timestamp: data.createdAt,
+            sender: data.sender_id === (user && user.id) ? user.name : '상대방'
+          };
+          
+          console.log('Adding new message to UI:', newMessage);
+          const updatedMessages = [...prev, newMessage];
+          
+          // Scroll to bottom after adding received message
+          setTimeout(() => {
+            scrollToBottom();
+          }, 100);
+          
+          return updatedMessages;
+        });
+      });
+      
+      return () => {
+        newSocket.disconnect();
+      };
+    }
+  }, [user]);
 
   // Load chat rooms on component mount
   useEffect(() => {
@@ -319,18 +446,22 @@ const ChatPage = () => {
         const response = await chatService.getChatRooms();
         
         if (response.data && response.data.success) {
-          const rooms = response.data.data.map(room => ({
-            id: room.id,
-            partnerName: room.name,
-            lastMessage: room.lastMessage,
-            lastTime: formatTimestamp(room.timestamp),
-            unreadCount: room.unreadCount || 0,
-            productTitle: room.productTitle,
-            productPrice: room.productPrice,
-            productImage: room.productImage,
-            productId: room.productId,
-            partnerId: room.partnerId
-          }));
+          const rooms = response.data.data.map(room => {
+            console.log('Raw room data from API:', room);
+            return {
+              id: room.id,
+              partnerName: room.name,
+              lastMessage: room.lastMessage,
+              lastTime: formatTimestamp(room.timestamp),
+              unreadCount: room.unreadCount || 0,
+              productTitle: room.productTitle,
+              productPrice: room.productPrice,
+              productImage: room.productImage,
+              productId: room.productId,
+              partnerId: room.id // room.id가 상대방 사용자 ID
+            };
+          });
+          console.log('Processed chat rooms:', rooms);
           setChatRooms(rooms);
 
           const targetUserId = searchParams.get('userId');
@@ -366,9 +497,13 @@ const ChatPage = () => {
                   productPrice: newRoom.productPrice,
                   productImage: newRoom.productImage,
                   productId: newRoom.productId,
-                  partnerId: newRoom.partnerId
+                  partnerId: newRoom.id // room.id가 상대방 사용자 ID
                 };
-                setChatRooms(prev => [formattedNewRoom, ...prev]);
+                setChatRooms(prev => {
+                  // Remove any existing room with the same ID to avoid duplicates
+                  const filtered = prev.filter(room => room.id !== formattedNewRoom.id);
+                  return [formattedNewRoom, ...filtered];
+                });
                 selectRoom(formattedNewRoom);
               } else {
                 console.error('Failed to get or create chat room from API:', newRoomResponse);
@@ -470,13 +605,15 @@ const ChatPage = () => {
     loadMessages();
   }, [selectedRoom, user]);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // Remove automatic scroll on message changes
+  // useEffect(() => {
+  //   scrollToBottom();
+  // }, [messages]);
 
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      // Scroll only within the messages container, not the entire window
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
   };
 
@@ -484,6 +621,25 @@ const ChatPage = () => {
     setSelectedRoom(room);
     setShowList(false);
     setShowChat(true);
+    
+    // Join the room via Socket.IO (only if connected)
+    if (socket && isSocketConnected && user && user.id) {
+      console.log('Joining room:', room.productId, 'as user:', user.id);
+      socket.emit('joinRoom', { 
+        userId: user.id, 
+        productId: room.productId 
+      });
+      
+      // Add current user to online users for this room
+      setOnlineUsers(prev => {
+        const newSet = new Set([...prev, user.id]);
+        console.log('Added current user to online users:', Array.from(newSet));
+        return newSet;
+      });
+    } else {
+      console.log('Cannot join room - Socket not connected or user not available');
+      console.log('Socket connected:', isSocketConnected, 'User:', user && user.id);
+    }
   };
 
   const handleBackToList = () => {
@@ -508,9 +664,23 @@ const ChatPage = () => {
     };
 
     setMessages(prev => [...prev, optimisticMessage]);
+    
+    // Scroll to bottom after adding optimistic message
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
 
     try {
-      // Send message to API
+      // Send message via Socket.IO for real-time delivery
+      if (socket && isSocketConnected) {
+        socket.emit('sendMessage', {
+          message: messageText,
+          senderId: user && user.id,
+          productId: selectedRoom.productId
+        });
+      }
+      
+      // Also send to API for persistence
       const response = await chatService.sendMessage(selectedRoom.id, {
         message: messageText,
         senderId: (user && user.id) || 1, // Default to 1 if no user
@@ -525,7 +695,7 @@ const ChatPage = () => {
               ? {
                   ...msg,
                   id: response.data.data.id,
-                  timestamp: response.data.data.timestamp
+                  timestamp: response.data.data.createdAt || response.data.data.timestamp
                 }
               : msg
           )
@@ -601,13 +771,43 @@ const ChatPage = () => {
     <Container>
       <ChatList showList={showList}>
         <ChatListHeader>
-          <ChatListTitle>채팅</ChatListTitle>
+          <ChatListTitle>
+            {searchParams.get('productId') ? '상품 채팅' : '채팅'}
+          </ChatListTitle>
+          {searchParams.get('productId') && (
+            <div style={{fontSize: '0.9rem', color: '#666', marginTop: '0.5rem'}}>
+              특정 상품과 관련된 채팅만 표시됩니다
+            </div>
+          )}
         </ChatListHeader>
         
         <ChatRooms>
-          {chatRooms.map(room => (
+          {(() => {
+            const targetProductId = searchParams.get('productId');
+            const filteredRooms = chatRooms.filter(room => {
+              // productId 파라미터가 있으면 해당 상품과 관련된 채팅방만 표시
+              return !targetProductId || room.productId === parseInt(targetProductId);
+            });
+            
+            if (filteredRooms.length === 0) {
+              return (
+                <div style={{
+                  padding: '2rem',
+                  textAlign: 'center',
+                  color: '#666',
+                  fontSize: '0.9rem'
+                }}>
+                  {targetProductId 
+                    ? '이 상품에 대한 채팅이 없습니다.' 
+                    : '채팅방이 없습니다.'
+                  }
+                </div>
+              );
+            }
+            
+            return filteredRooms.map(room => (
             <ChatRoomItem
-              key={room.id}
+              key={`${room.id}-${room.productId}`}
               active={selectedRoom && selectedRoom.id === room.id}
               onClick={() => selectRoom(room)}
             >
@@ -618,14 +818,15 @@ const ChatPage = () => {
               <ChatRoomPreview>{room.lastMessage}</ChatRoomPreview>
               
               <ProductCard>
-                <ProductImage image={room.productImage} />
+                <ProductImage image={getImageUrl(room.productImage)} />
                 <ProductInfo>
                   <ProductTitle>{room.productTitle}</ProductTitle>
                   <ProductPrice>{formatPrice(room.productPrice)}</ProductPrice>
                 </ProductInfo>
               </ProductCard>
             </ChatRoomItem>
-          ))}
+            ));
+          })()}
         </ChatRooms>
       </ChatList>
 
@@ -639,7 +840,10 @@ const ChatPage = () => {
                 </BackButton>
                 <ChatPartner>
                   <PartnerName>{selectedRoom.partnerName}</PartnerName>
-                  <PartnerStatus>온라인</PartnerStatus>
+                  <PartnerStatus>
+                    {!isSocketConnected ? '연결 중...' : 
+                     onlineUsers.has(selectedRoom.partnerId) ? '온라인' : '오프라인'}
+                  </PartnerStatus>
                 </ChatPartner>
               </ChatHeaderLeft>
               
@@ -650,10 +854,10 @@ const ChatPage = () => {
               </ChatHeaderRight>
             </ChatHeader>
 
-            <MessagesContainer>
+            <MessagesContainer ref={messagesContainerRef}>
               {selectedRoom && (
                 <ProductCard>
-                  <ProductImage image={selectedRoom.productImage} />
+                  <ProductImage image={getImageUrl(selectedRoom.productImage)} />
                   <ProductInfo>
                     <ProductTitle>{selectedRoom.productTitle}</ProductTitle>
                     <ProductPrice>{formatPrice(selectedRoom.productPrice)}</ProductPrice>

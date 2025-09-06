@@ -76,29 +76,95 @@ app.locals.communityHelpers = customEjs.communityHelpers;
 const httpServer = createServer(app);
 const io = socketio(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    credentials: true
-  }
+    origin: [
+      process.env.FRONTEND_URL || 'http://localhost:5173',
+      'http://localhost:5173',
+      'http://127.0.0.1:5173'
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
+  },
+  transports: ['polling', 'websocket'], // polling을 먼저 시도
+  allowEIO3: true, // Engine.IO v3 호환성
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  upgradeTimeout: 10000
 });
 
+// Track user room participation
+const userRooms = new Map(); // userId -> Set of roomIds
+const socketUsers = new Map(); // socketId -> userId
+
 io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
+  console.log('Socket.IO: User connected:', socket.id);
+  console.log('Socket.IO: Transport:', socket.conn.transport.name);
+  console.log('Socket.IO: Engine.IO version:', socket.conn.protocol);
 
   socket.on('joinRoom', (data) => {
     const roomId = data.productId; // Assuming productId is the roomId
     const userId = data.userId;
+    
+    console.log(`[Socket.IO] joinRoom received:`, { roomId, userId, socketId: socket.id });
+    
+    // Store user info
+    socket.userId = userId;
+    socketUsers.set(socket.id, userId);
+    
+    // Track user's room participation
+    if (!userRooms.has(userId)) {
+      userRooms.set(userId, new Set());
+    }
+    userRooms.get(userId).add(roomId);
+    
     socket.join(roomId);
     console.log(`[Socket.IO] User ${userId} (socket: ${socket.id}) joined room ${roomId}`);
-    // Optionally, you can fetch and send chat history to the newly joined user
-    // This part is already handled by the client's fetchChatHistory, but can be done here too.
+    
+    // Notify other users in the room that this user is online
+    socket.to(roomId).emit('userJoinedRoom', { userId, roomId });
+    console.log(`[Socket.IO] Emitted userJoinedRoom to room ${roomId} for user ${userId}`);
+    
+    // Also notify the joining user about other users already in the room
+    const room = io.sockets.adapter.rooms.get(roomId);
+    if (room) {
+      const otherUsers = Array.from(room).filter(socketId => socketId !== socket.id);
+      console.log(`[Socket.IO] Room ${roomId} has ${otherUsers.length} other users:`, otherUsers);
+      
+      // Send list of online users to the newly joined user
+      if (otherUsers.length > 0) {
+        const onlineUserIds = otherUsers
+          .map(socketId => socketUsers.get(socketId))
+          .filter(userId => userId !== undefined);
+        
+        if (onlineUserIds.length > 0) {
+          socket.emit('usersInRoom', { roomId, userIds: onlineUserIds });
+          console.log(`[Socket.IO] Sent usersInRoom to user ${userId}:`, onlineUserIds);
+        }
+      }
+    }
   });
 
   socket.on('sendMessage', async (data) => {
     console.log(`[Socket.IO] Received sendMessage from ${socket.id}:`, data);
     try {
+      // Find the receiver_id by looking at other users in the same room
+      const room = io.sockets.adapter.rooms.get(data.productId);
+      let receiverId = null;
+      
+      if (room) {
+        const otherSockets = Array.from(room).filter(socketId => socketId !== socket.id);
+        if (otherSockets.length > 0) {
+          // Get the first other user in the room as receiver
+          const otherSocketId = otherSockets[0];
+          receiverId = socketUsers.get(otherSocketId);
+        }
+      }
+      
+      console.log(`[Socket.IO] Determined receiver_id: ${receiverId} for room ${data.productId}`);
+      
       const message = await ChatMessage.create({
         sender_id: data.senderId,
-        receiver_id: data.receiverId,
+        receiver_id: receiverId,
         product_id: data.productId,
         message: data.message,
       });
@@ -109,8 +175,20 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
+  socket.on('disconnect', (reason) => {
+    console.log('Socket.IO: User disconnected:', socket.id, 'Reason:', reason);
+    
+    if (socket.userId) {
+      // Notify all rooms that this user left
+      const rooms = userRooms.get(socket.userId) || new Set();
+      rooms.forEach(roomId => {
+        socket.to(roomId).emit('userLeftRoom', { userId: socket.userId, roomId });
+      });
+      
+      // Clean up tracking data
+      userRooms.delete(socket.userId);
+      socketUsers.delete(socket.id);
+    }
   });
 });
 
