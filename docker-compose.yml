@@ -95,13 +95,17 @@ services:
       - internal_net
 
   phpmyadmin:
-    image: linuxserver/phpmyadmin
+    # image: linuxserver/phpmyadmin
+    image: phpmyadmin/phpmyadmin:latest
     container_name: vintage-market-phpmyadmin
     restart: unless-stopped
     environment:
       PMA_HOST: database
       PMA_PORT: 3306
       MYSQL_ROOT_PASSWORD: root_password
+      PHP_UPLOAD_MAX_FILESIZE: 1G
+      #개발용 ENV설정
+      PMA_ABSOLUTE_URI: http://localhost:8081/
     ports:
       # [수정] Jenkins와의 충돌을 피해 8081 포트로 명확히 지정
       - "8081:80"
