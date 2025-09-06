@@ -163,6 +163,49 @@ router.put('/posts/:id', authenticateToken, async (req, res, next) => {
 
     // 업로드된 파일이 있으면 처리
     if (req.files && req.files.images) {
+      // Delete old image files before adding new ones
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const uploadPath = path.join(__dirname, '../uploads/');
+        
+        // Parse old images from JSON string or array
+        let oldImages = [];
+        if (typeof existingPost.images === 'string') {
+          try {
+            oldImages = JSON.parse(existingPost.images);
+          } catch (parseError) {
+            console.error('Error parsing old images JSON:', parseError);
+            oldImages = [];
+          }
+        } else if (Array.isArray(existingPost.images)) {
+          oldImages = existingPost.images;
+        }
+        
+        for (const imageData of oldImages) {
+          // Handle both old format (string) and new format (object with filename)
+          let filename;
+          if (typeof imageData === 'string') {
+            filename = path.basename(imageData);
+          } else if (imageData && imageData.filename) {
+            filename = imageData.filename;
+          } else if (imageData && imageData.url) {
+            filename = path.basename(imageData.url);
+          }
+          
+          if (filename) {
+            const filePath = path.join(uploadPath, filename);
+            
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+              console.log(`Deleted old community post image file during update: ${filePath}`);
+            }
+          }
+        }
+      } catch (fileError) {
+        console.error('Error deleting old community post image files during update:', fileError);
+        // Continue with update even if old file deletion fails
+      }
       const uploadPath = require('path').join(__dirname, '../uploads/');
       const fs = require('fs');
       
@@ -482,6 +525,54 @@ router.delete('/posts/:id', authenticateToken, async (req, res, next) => {
     // Check if user is the author of the post
     if (post.user_id !== userId) {
       return res.status(403).json({ success: false, message: 'Not authorized to delete this post' });
+    }
+
+    // Delete associated image files before deleting the post
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const uploadPath = path.join(__dirname, '../uploads/');
+      
+      // Parse images from JSON string or array
+      let images = [];
+      if (typeof post.images === 'string') {
+        try {
+          images = JSON.parse(post.images);
+        } catch (parseError) {
+          console.error('Error parsing images JSON:', parseError);
+          images = [];
+        }
+      } else if (Array.isArray(post.images)) {
+        images = post.images;
+      }
+      
+      for (const imageData of images) {
+        // Handle both old format (string) and new format (object with filename)
+        let filename;
+        if (typeof imageData === 'string') {
+          // Old format: just the filename
+          filename = path.basename(imageData);
+        } else if (imageData && imageData.filename) {
+          // New format: object with filename property
+          filename = imageData.filename;
+        } else if (imageData && imageData.url) {
+          // New format: object with url property
+          filename = path.basename(imageData.url);
+        }
+        
+        if (filename) {
+          const filePath = path.join(uploadPath, filename);
+          
+          // Check if file exists and delete it
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log(`Deleted community post image file: ${filePath}`);
+          }
+        }
+      }
+    } catch (fileError) {
+      console.error('Error deleting community post image files:', fileError);
+      // Continue with post deletion even if file deletion fails
     }
 
     // Delete all comments associated with this post
