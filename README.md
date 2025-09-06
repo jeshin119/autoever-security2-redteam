@@ -98,6 +98,9 @@ make dev
 
 # Insert sample data (after containers are running)
 docker exec -i vintage-market-mysql mysql -u root -proot_password vintagemarket < database/seed_data_clean.sql
+
+# Note: The seed_data_clean.sql file includes UTF-8 character set configuration
+# to ensure proper Korean text display
 ```
 
 #### Sample Data
@@ -198,6 +201,22 @@ docker exec -it vintage-market-mysql mysql -u root -proot_password vintagemarket
 make docker-clean
 make dev
 ```
+
+### Character Encoding Issues (Korean Text)
+If Korean text appears as garbled characters (ì•ˆë…•í•˜ì„¸ìš"!):
+
+```bash
+# Check current character set
+docker exec -it vintage-market-mysql mysql -u root -proot_password vintagemarket -e "SHOW VARIABLES LIKE 'character_set%';"
+
+# Fix encoding by restarting with proper UTF-8 settings
+make docker-clean
+make dev
+# Then re-insert data
+docker exec -i vintage-market-mysql mysql -u root -proot_password vintagemarket < database/seed_data_clean.sql
+```
+
+The MySQL container is configured with UTF-8 character set by default. If issues persist, ensure your terminal supports UTF-8 encoding.
 
 ### Docker Issues
 ```bash

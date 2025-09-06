@@ -1,6 +1,10 @@
 -- 더미 데이터 삽입 스크립트 (기존 데이터 삭제 후 삽입)
 -- 외래키 제약 조건을 고려한 올바른 순서로 삽입
 
+-- UTF-8 문자셋 설정
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 -- 기존 데이터 삭제 (외래키 제약 조건을 고려한 역순)
 DELETE FROM `transactions`;
 DELETE FROM `community_comments`;
