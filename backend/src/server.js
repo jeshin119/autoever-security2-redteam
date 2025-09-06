@@ -7,7 +7,6 @@ const session = require('express-session');
 const fileupload = require("express-fileupload");
 const path = require('path');
 const { createServer } = require('http');
-const socketio = require('socket.io');
 const PortManager = require('./utils/portManager');
 require('dotenv').config();
 
@@ -293,28 +292,6 @@ app.get('/api', (req, res) => {
     }
   });
 });
-io.on('connection', (socket) => {
-  console.log('New WebSocket connection:', socket.id);
-  
-  // Intentionally vulnerable: No authentication for socket connections
-  socket.on('join-room', (roomId) => {
-    socket.join(roomId);
-    console.log(`Socket ${socket.id} joined room ${roomId}`);
-  });
-  
-  socket.on('send-message', (data) => {
-    // Intentionally vulnerable: No message validation or sanitization
-    io.to(data.roomId).emit('receive-message', data);
-  });
-  
-  socket.on('typing', (data) => {
-    socket.to(data.roomId).emit('user-typing', data);
-  });
-  
-  socket.on('disconnect', () => {
-    console.log('Socket disconnected:', socket.id);
-  });
-});
 
 // Error handling middleware
 app.use(errorHandler);
@@ -445,4 +422,4 @@ if (require.main === module) {
   startServer();
 }
 
-module.exports = { app, io };
+module.exports = { app };

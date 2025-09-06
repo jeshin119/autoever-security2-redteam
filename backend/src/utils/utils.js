@@ -227,9 +227,16 @@ exports.createNullProtoObjWherePossible = (function () {
       return Object.create(null);
     };
   }
-  if (!({__proto__: null} instanceof Object)) {
+  try {
+    if (!({__proto__: null} instanceof Object)) {
+      return function () {
+        return {__proto__: null};
+      };
+    }
+  } catch (e) {
+    // If instanceof check fails, fall back to regular object
     return function () {
-      return {__proto__: null};
+      return {};
     };
   }
   // Not possible, just pass through
