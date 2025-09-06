@@ -132,6 +132,39 @@ router.get('/', async (req, res) => {
 });
 
 // Get product by ID (intentionally vulnerable) - MOVED after search routes
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Intentionally no authorization check - anyone can view any product
+    
+    const product = await Product.findByPk(id);
+    
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: `Product not found with ID: ${id}`
+      });
+    }
+    
+    // Increment view count (vulnerable - no rate limiting)
+    await product.increment('views');
+    
+    res.json({
+      success: true,
+      data: product.toJSON()
+    });
+    
+  } catch (error) {
+    console.error('[GET /products/:id] error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching product',
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
 
 // Create new product (intentionally vulnerable, 프런트 JSON과 호환)
 router.post('/', async (req, res) => {
@@ -238,6 +271,36 @@ router.put('/:id', async (req, res) => {
     
     // Process new images if uploaded
     if (req.files && req.files.images) {
+      // Delete old image files before adding new ones
+      try {
+        let oldImages = [];
+        if (typeof product.images === 'string') {
+          try {
+            oldImages = JSON.parse(product.images);
+          } catch (parseError) {
+            console.error('Error parsing old images JSON:', parseError);
+            oldImages = [];
+          }
+        } else if (Array.isArray(product.images)) {
+          oldImages = product.images;
+        }
+        
+        for (const imagePath of oldImages) {
+          if (imagePath && imagePath.startsWith('/uploads/')) {
+            const filename = path.basename(imagePath);
+            const filePath = path.join(UPLOAD_DIR, filename);
+            
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+              console.log(`Deleted old file during update: ${filePath}`);
+            }
+          }
+        }
+      } catch (fileError) {
+        console.error('Error deleting old image files during update:', fileError);
+        // Continue with update even if old file deletion fails
+      }
+      
       const files = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
       const newImages = [];
       for (const file of files) {
@@ -299,6 +362,38 @@ router.delete('/:id', async (req, res) => {
         success: false,
         message: `Product not found with ID: ${id}`
       });
+    }
+    
+    // Delete associated image files before deleting the product
+    try {
+      // Parse images from JSON string or array
+      let images = [];
+      if (typeof product.images === 'string') {
+        try {
+          images = JSON.parse(product.images);
+        } catch (parseError) {
+          console.error('Error parsing images JSON:', parseError);
+          images = [];
+        }
+      } else if (Array.isArray(product.images)) {
+        images = product.images;
+      }
+      
+      for (const imagePath of images) {
+        if (imagePath && imagePath.startsWith('/uploads/')) {
+          const filename = path.basename(imagePath);
+          const filePath = path.join(UPLOAD_DIR, filename);
+          
+          // Check if file exists and delete it
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            console.log(`Deleted file: ${filePath}`);
+          }
+        }
+      }
+    } catch (fileError) {
+      console.error('Error deleting image files:', fileError);
+      // Continue with product deletion even if file deletion fails
     }
     
     await product.destroy();
