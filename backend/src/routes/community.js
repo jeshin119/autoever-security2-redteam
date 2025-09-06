@@ -87,7 +87,7 @@ router.get('/posts/:id', async (req, res, next) => {
       include: [
         {
           model: User,
-          as: 'author',
+          as: 'commentAuthor',
           attributes: ['id', 'name', 'email']
         }
       ],
@@ -235,13 +235,13 @@ router.post('/posts/:id/comments', authenticateToken, async (req, res, next) => 
     const commentWithAuthor = await Comment.findByPk(comment.id, {
       include: [{
         model: User,
-        as: 'author',
+        as: 'commentAuthor',
         attributes: ['id', 'name', 'email']
       }]
     });
 
     console.log('Comment with author:', commentWithAuthor.toJSON());
-    console.log('Author info:', commentWithAuthor.author);
+    console.log('Author info:', commentWithAuthor.commentAuthor);
 
     // Ensure the response has the correct structure
     const responseData = {
@@ -252,7 +252,7 @@ router.post('/posts/:id/comments', authenticateToken, async (req, res, next) => 
       parent_id: commentWithAuthor.parent_id,
       createdAt: commentWithAuthor.createdAt,
       updatedAt: commentWithAuthor.updatedAt,
-      author: commentWithAuthor.author
+      author: commentWithAuthor.commentAuthor
     };
 
     console.log('Final response data:', responseData);
