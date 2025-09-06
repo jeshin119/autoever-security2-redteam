@@ -305,7 +305,7 @@ const ProductCreatePage = () => {
     isMountedRef.current = true;
 
     if (!user) {
-      navigate('/login');
+      history.push('/login');
       return;
     }
 
@@ -455,15 +455,23 @@ const ProductCreatePage = () => {
         userid: user && user.id
       };
 
-      if (imageFiles.length === 0) {
-        submitData.images = formData.images;
-      }
-
       if (isEdit) {
+        // 수정 모드에서는 기존 이미지 정보를 유지
+        if (imageFiles.length === 0) {
+          // 새로운 이미지 파일이 없으면 기존 이미지 유지
+          submitData.images = formData.images;
+        }
+        // 새로운 이미지 파일이 있으면 productService에서 처리
+        
         await productService.updateProduct(id, submitData, imageFiles);
         alert('상품이 수정되었습니다.');
-        navigate(`/products/${id}`);
+        history.push(`/products/${id}`);
       } else {
+        // 새 상품 등록 모드
+        if (imageFiles.length === 0) {
+          submitData.images = formData.images;
+        }
+        
         const response = await productService.createProduct(submitData, imageFiles);
         alert('상품이 등록되었습니다.');
         const newId = (response && response.data && response.data.id) || (response && response.data && response.data.data && response.data.data.id);

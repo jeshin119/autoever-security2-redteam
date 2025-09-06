@@ -30,9 +30,10 @@ export const createProduct = async (productData) => {
   }
 };
 
-export const updateProduct = async (id, productData) => {
+export const updateProduct = async (id, productData, imageFiles = []) => {
   try {
-    // Intentionally vulnerable: No authorization check on client
+    // For now, just send JSON data without file uploads
+    // TODO: Implement proper file upload handling later
     const response = await api.put(`/products/${id}`, productData);
     return response.data;
   } catch (error) {

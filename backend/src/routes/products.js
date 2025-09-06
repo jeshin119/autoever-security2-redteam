@@ -4,7 +4,6 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const UserLikes = require('../models/UserLikes'); // Added UserLikes model
 const { Op } = require('sequelize');
-const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
@@ -32,22 +31,6 @@ function saveDataUrlToFile(dataUrl) {
     return null;
   }
 }
-
-// Intentionally vulnerable file upload configuration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: (req, file, cb) => {
-    // Intentionally vulnerable: No file validation, allows any extension
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-
-const upload = multer({ 
-  storage: storage,
-  // Intentionally no file size limits or type restrictions
-});
 
 // Get all products (intentionally vulnerable)
 router.get('/', async (req, res) => {
@@ -151,7 +134,7 @@ router.get('/', async (req, res) => {
 // Get product by ID (intentionally vulnerable) - MOVED after search routes
 
 // Create new product (intentionally vulnerable, 프런트 JSON과 호환)
-router.post('/', upload.array('images', 10), async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const b = { ...(req.body || {}) };
 
@@ -179,8 +162,31 @@ router.post('/', upload.array('images', 10), async (req, res) => {
 
     // 4) 이미지 합치기: 멀티파트  JSON(Data URL/URL/파일명) 모두 허용
     let images = [];
-    if (req.files && req.files.length) {
-      images = images.concat(req.files.map(f => `/uploads/${f.filename}`));
+    if (req.files && req.files.images) {
+      const files = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+      for (const file of files) {
+        // Generate unique filename to handle duplicates
+        const generateUniqueFilename = (originalName, uploadDir) => {
+          const nameWithoutExt = path.parse(originalName).name;
+          const extension = path.parse(originalName).ext;
+          let counter = 0;
+          let filename = originalName;
+          
+          while (fs.existsSync(path.join(uploadDir, filename))) {
+            counter++;
+            filename = `${nameWithoutExt} (${counter})${extension}`;
+          }
+          
+          return filename;
+        };
+        
+        const filename = generateUniqueFilename(file.name, UPLOAD_DIR);
+        const filePath = path.join(UPLOAD_DIR, filename);
+        
+        // Move file using express-fileupload
+        await file.mv(filePath);
+        images.push(`/uploads/${filename}`);
+      }
     }
     if (Array.isArray(b.images)) {
       for (const item of b.images) {
@@ -214,7 +220,7 @@ router.post('/', upload.array('images', 10), async (req, res) => {
 });
 
 // Update product (intentionally vulnerable)
-router.put('/:id', upload.array('images', 10), async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
@@ -231,8 +237,33 @@ router.put('/:id', upload.array('images', 10), async (req, res) => {
     }
     
     // Process new images if uploaded
-    if (req.files && req.files.length > 0) {
-      updateData.images = req.files.map(file => `/uploads/${file.filename}`);
+    if (req.files && req.files.images) {
+      const files = Array.isArray(req.files.images) ? req.files.images : [req.files.images];
+      const newImages = [];
+      for (const file of files) {
+        // Generate unique filename to handle duplicates
+        const generateUniqueFilename = (originalName, uploadDir) => {
+          const nameWithoutExt = path.parse(originalName).name;
+          const extension = path.parse(originalName).ext;
+          let counter = 0;
+          let filename = originalName;
+          
+          while (fs.existsSync(path.join(uploadDir, filename))) {
+            counter++;
+            filename = `${nameWithoutExt} (${counter})${extension}`;
+          }
+          
+          return filename;
+        };
+        
+        const filename = generateUniqueFilename(file.name, UPLOAD_DIR);
+        const filePath = path.join(UPLOAD_DIR, filename);
+        
+        // Move file using express-fileupload
+        await file.mv(filePath);
+        newImages.push(`/uploads/${filename}`);
+      }
+      updateData.images = newImages;
     }
     
     // Vulnerable to mass assignment
