@@ -274,7 +274,11 @@ const CommunityPostCreatePage = () => {
         
         // 기존 첨부파일 설정
         if (post.attachments && Array.isArray(post.attachments)) {
-          setAttachedFiles(post.attachments);
+          const filesWithId = post.attachments.map((file, index) => ({
+            ...file,
+            id: file.id || `existing-${index}-${Date.now()}`
+          }));
+          setAttachedFiles(filesWithId);
         }
       }
     } catch (error) {
