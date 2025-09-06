@@ -10,7 +10,7 @@ const jwt = require('jsonwebtoken');
 const authenticateToken = require('../middleware/authenticateToken');
 
 // 업로드 폴더 보장(없으면 생성) — 취약 그대로
-const UPLOAD_DIR = path.join(__dirname, '../../uploads/');
+const UPLOAD_DIR = path.join(__dirname, '../uploads/');
 try {
   if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 } catch (_) {}
