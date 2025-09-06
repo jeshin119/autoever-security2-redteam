@@ -185,6 +185,125 @@ router.get('/recent', async (req, res) => {
   }
 });
 
+// Search products with query parameters (MUST come first - for frontend API calls)
+router.get('/search', async (req, res) => {
+  console.log('🔍 SEARCH ENDPOINT HIT - Query params:', req.query);
+  console.log('🔍 SEARCH ENDPOINT HIT - Full URL:', req.originalUrl);
+  console.log('🔍 SEARCH ENDPOINT HIT - This is the query parameter version');
+  
+  try {
+    const { 
+      search, 
+      category, 
+      condition, 
+      priceMin, 
+      priceMax, 
+      location, 
+      sortBy = 'latest',
+      limit, 
+      offset 
+    } = req.query;
+    
+    let whereClause = {};
+    
+    // Search functionality
+    if (search) {
+      whereClause[Op.or] = [
+        { title: { [Op.like]: `%${search}%` } },
+        { description: { [Op.like]: `%${search}%` } },
+        { category: { [Op.like]: `%${search}%` } }
+      ];
+    }
+    
+    // Category filter
+    if (category && category !== '') {
+      whereClause.category = category;
+    }
+    
+    // Condition filter
+    if (condition && condition !== '') {
+      whereClause.condition = condition;
+    }
+    
+    // Price range filtering
+    if (priceMin && priceMin !== '') {
+      whereClause.price = { [Op.gte]: parseFloat(priceMin) };
+    }
+    if (priceMax && priceMax !== '') {
+      if (whereClause.price) {
+        whereClause.price[Op.lte] = parseFloat(priceMax);
+      } else {
+        whereClause.price = { [Op.lte]: parseFloat(priceMax) };
+      }
+    }
+    
+    // Location filter
+    if (location && location !== '') {
+      whereClause.location = { [Op.like]: `%${location}%` };
+    }
+    
+    // Sort order mapping
+    let orderBy = ['createdAt', 'DESC'];
+    switch (sortBy) {
+      case 'latest':
+        orderBy = ['createdAt', 'DESC'];
+        break;
+      case 'oldest':
+        orderBy = ['createdAt', 'ASC'];
+        break;
+      case 'price-low':
+        orderBy = ['price', 'ASC'];
+        break;
+      case 'price-high':
+        orderBy = ['price', 'DESC'];
+        break;
+      case 'popular':
+        orderBy = ['likes', 'DESC'];
+        break;
+      default:
+        orderBy = ['createdAt', 'DESC'];
+    }
+    
+    const products = await Product.findAll({
+      where: whereClause,
+      limit: limit ? parseInt(limit) : undefined,
+      offset: offset ? parseInt(offset) : undefined,
+      order: [orderBy]
+    });
+    
+    const totalProducts = await Product.count({ where: whereClause });
+    
+    res.json({
+      success: true,
+      message: 'Search results retrieved successfully',
+      data: products,
+      pagination: {
+        total: totalProducts,
+        limit: limit ? parseInt(limit) : products.length,
+        offset: offset ? parseInt(offset) : 0
+      },
+      searchParams: {
+        search,
+        category,
+        condition,
+        priceMin,
+        priceMax,
+        location,
+        sortBy
+      }
+    });
+    
+  } catch (error) {
+    console.error('Search endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error searching products',
+      error: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 // Get product by ID (intentionally vulnerable) - MOVED after specific routes
 router.get('/:id', async (req, res) => {
   try {
@@ -496,123 +615,6 @@ router.get('/category/:category', async (req, res) => {
   }
 });
 
-// Search products with query parameters (MUST come first - for frontend API calls)
-router.get('/search', async (req, res) => {
-  console.log('🔍 SEARCH ENDPOINT HIT - Query params:', req.query);
-  console.log('🔍 SEARCH ENDPOINT HIT - Full URL:', req.originalUrl);
-  
-  try {
-    const { 
-      search, 
-      category, 
-      condition, 
-      priceMin, 
-      priceMax, 
-      location, 
-      sortBy = 'latest',
-      limit, 
-      offset 
-    } = req.query;
-    
-    let whereClause = {};
-    
-    // Search functionality
-    if (search) {
-      whereClause[Op.or] = [
-        { title: { [Op.like]: `%${search}%` } },
-        { description: { [Op.like]: `%${search}%` } },
-        { category: { [Op.like]: `%${search}%` } }
-      ];
-    }
-    
-    // Category filter
-    if (category && category !== '') {
-      whereClause.category = category;
-    }
-    
-    // Condition filter
-    if (condition && condition !== '') {
-      whereClause.condition = condition;
-    }
-    
-    // Price range filtering
-    if (priceMin && priceMin !== '') {
-      whereClause.price = { [Op.gte]: parseFloat(priceMin) };
-    }
-    if (priceMax && priceMax !== '') {
-      if (whereClause.price) {
-        whereClause.price[Op.lte] = parseFloat(priceMax);
-      } else {
-        whereClause.price = { [Op.lte]: parseFloat(priceMax) };
-      }
-    }
-    
-    // Location filter
-    if (location && location !== '') {
-      whereClause.location = { [Op.like]: `%${location}%` };
-    }
-    
-    // Sort order mapping
-    let orderBy = ['createdAt', 'DESC'];
-    switch (sortBy) {
-      case 'latest':
-        orderBy = ['createdAt', 'DESC'];
-        break;
-      case 'oldest':
-        orderBy = ['createdAt', 'ASC'];
-        break;
-      case 'price-low':
-        orderBy = ['price', 'ASC'];
-        break;
-      case 'price-high':
-        orderBy = ['price', 'DESC'];
-        break;
-      case 'popular':
-        orderBy = ['likes', 'DESC'];
-        break;
-      default:
-        orderBy = ['createdAt', 'DESC'];
-    }
-    
-    const products = await Product.findAll({
-      where: whereClause,
-      limit: limit ? parseInt(limit) : undefined,
-      offset: offset ? parseInt(offset) : undefined,
-      order: [orderBy]
-    });
-    
-    const totalProducts = await Product.count({ where: whereClause });
-    
-    res.json({
-      success: true,
-      message: 'Search results retrieved successfully',
-      data: products,
-      pagination: {
-        total: totalProducts,
-        limit: limit ? parseInt(limit) : products.length,
-        offset: offset ? parseInt(offset) : 0
-      },
-      searchParams: {
-        search,
-        category,
-        condition,
-        priceMin,
-        priceMax,
-        location,
-        sortBy
-      }
-    });
-    
-  } catch (error) {
-    console.error('Search endpoint error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error searching products',
-      error: error.message,
-      stack: error.stack
-    });
-  }
-});
 
 // Search products (vulnerable to injection) - path parameter version  
 router.get('/search/:query', async (req, res) => {

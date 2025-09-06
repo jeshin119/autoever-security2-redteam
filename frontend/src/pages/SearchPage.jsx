@@ -88,19 +88,6 @@ const FilterGroup = styled.div`
     /* 가격범위 필터는 더 넓은 공간 필요 */
     grid-column: span 1;
   }
-  
-  &:nth-child(5) {
-    /* 필터 적용 버튼은 별도 행에 배치 */
-    grid-column: span 4;
-    
-    @media (max-width: 1200px) {
-      grid-column: span 2;
-    }
-    
-    @media (max-width: 768px) {
-      grid-column: span 1;
-    }
-  }
 `;
 
 const FilterLabel = styled.label`
@@ -326,6 +313,15 @@ const SearchPage = () => {
     }
   }, [location.search]);
 
+  // 필터가 변경될 때마다 자동으로 검색 실행
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const query = urlParams.get('q') || '';
+    if (query) {
+      performSearch();
+    }
+  }, [filters]);
+
   const performSearch = async () => {
     try {
       setLoading(true);
@@ -369,9 +365,6 @@ const SearchPage = () => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const applyFilters = () => {
-    performSearch();
-  };
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('ko-KR').format(price) + '원';
@@ -465,12 +458,6 @@ const SearchPage = () => {
             </Select>
           </FilterGroup>
 
-          <FilterGroup>
-            <FilterButton onClick={applyFilters}>
-              <FiFilter />
-              필터 적용
-            </FilterButton>
-          </FilterGroup>
         </FilterGrid>
       </FilterSection>
 

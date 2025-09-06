@@ -51,10 +51,10 @@ export const deleteProduct = async (id) => {
   }
 };
 
-export const searchProducts = async (query) => {
+export const searchProducts = async (params = {}) => {
   try {
-    // Intentionally vulnerable: Raw query string
-    const response = await api.get(`/products/search?q=${query}`);
+    // Use the correct parameter name 'search' instead of 'q'
+    const response = await api.get('/products/search', { params });
     return response.data;
   } catch (error) {
     throw (error.response && error.response.data) || error;
