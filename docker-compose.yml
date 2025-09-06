@@ -60,14 +60,14 @@ services:
       - NODE_ENV=development
       - DEBUG=*
       - PORT=3000 # 컨테이너 내부 포트는 그대로 3000 사용
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=vintagemarket
+      - DB_USER=vintage_user
+      - DB_PASSWORD=vintage_password
       - DB_HOST=database
-      - FRONTEND_URL=${FRONTEND_URL}
-      - JWT_SECRET=${JWT_SECRET}
-      - SESSION_SECRET=${SESSION_SECRET}
-      - BACKEND_BASE_URL=${BACKEND_BASE_URL:-http://localhost:3001}
+      - FRONTEND_URL=http://localhost:5173
+      - JWT_SECRET=your-super-secret-jwt-key-here
+      - SESSION_SECRET=your-super-secret-session-key-here
+      - BACKEND_BASE_URL=http://localhost:3001
     volumes:
       - ./backend:/home/server/app
       - /home/server/app/node_modules
