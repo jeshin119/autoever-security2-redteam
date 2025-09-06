@@ -59,29 +59,7 @@ test: ## Run tests in all workspaces
 
 # Docker
 dev: ## Start development environment with Docker (localhost URLs)
-	@echo "🛠️ Starting development environment with localhost URLs..."
-	@cp .env.dev .env
-	@echo "🔄 Starting database..."
-	@docker-compose up -d database
-	@echo "⏳ Waiting for database to be healthy..."
-	@until [ "$$(docker inspect -f '{{.State.Health.Status}}' $(docker-compose ps -q database))" = "healthy" ]; do \
-		sleep 2; \
-		echo "  Still waiting for database..."; \
-	done
-	@echo "✅ Database is ready!"
-	@echo "🔄 Starting backend..."
-	@docker-compose up -d --build backend
-	@echo "⏳ Waiting for backend /api/health..."
-	@until curl -fsS http://localhost:3001/api/health >/dev/null 2>&1; do \
-		sleep 2; \
-		echo "  Still waiting for backend..."; \
-	done
-	@echo "✅ Backend is ready!"
-	@echo "🔄 Starting frontend..."
-	@docker-compose up -d --build frontend
-	@echo "🔄 Starting phpMyAdmin..."
-	@docker-compose up -d phpmyadmin
-	@echo "🎉 Development environment started successfully!"
+		@docker-compose up --build --force-recreate -d frontend backend database phpmyadmin
 	@echo "Frontend: http://localhost:5173"
 	@echo "Backend: http://localhost:3001"
 	@echo "phpMyAdmin: http://localhost:8081"
