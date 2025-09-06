@@ -326,13 +326,58 @@ const ChatPage = () => {
             lastTime: formatTimestamp(room.timestamp),
             unreadCount: room.unreadCount || 0,
             productTitle: room.productTitle,
-            productPrice: null,
-            productImage: null
+            productPrice: room.productPrice,
+            productImage: room.productImage,
+            productId: room.productId,
+            partnerId: room.partnerId
           }));
           setChatRooms(rooms);
+
+          const targetUserId = searchParams.get('userId');
+          const targetProductId = searchParams.get('productId');
+
+          console.log('URL Params - targetUserId:', targetUserId, 'targetProductId:', targetProductId);
+
+          if (targetUserId && targetProductId) {
+            const existingRoom = rooms.find(room => 
+              (room.partnerId === parseInt(targetUserId) || room.partnerId === targetUserId) && 
+              (room.productId === parseInt(targetProductId) || room.productId === targetProductId)
+            );
+
+            if (existingRoom) {
+              console.log('Found existing room:', existingRoom);
+              selectRoom(existingRoom);
+            } else {
+              console.log('No existing room found, attempting to get or create...');
+              // If no existing room, try to create or get one
+              // This assumes chatService.getOrCreateChatRoom handles the logic on the backend
+              const newRoomResponse = await chatService.getOrCreateChatRoom(targetUserId, targetProductId);
+              console.log('getOrCreateChatRoom response:', newRoomResponse);
+              if (newRoomResponse.data && newRoomResponse.data.success) {
+                const newRoom = newRoomResponse.data.data;
+                console.log('New or existing room from API:', newRoom);
+                const formattedNewRoom = {
+                  id: newRoom.id,
+                  partnerName: newRoom.name,
+                  lastMessage: newRoom.lastMessage || '',
+                  lastTime: formatTimestamp(newRoom.timestamp || new Date()),
+                  unreadCount: newRoom.unreadCount || 0,
+                  productTitle: newRoom.productTitle,
+                  productPrice: newRoom.productPrice,
+                  productImage: newRoom.productImage,
+                  productId: newRoom.productId,
+                  partnerId: newRoom.partnerId
+                };
+                setChatRooms(prev => [formattedNewRoom, ...prev]);
+                selectRoom(formattedNewRoom);
+              } else {
+                console.error('Failed to get or create chat room from API:', newRoomResponse);
+              }
+            }
+          }
         }
       } catch (error) {
-        console.error('Failed to load chat rooms:', error);
+        console.error('Failed to load chat rooms or get/create chat room:', error);
         // Fall back to mock data if API fails
         setChatRooms([
           {
@@ -343,7 +388,9 @@ const ChatPage = () => {
             unreadCount: 2,
             productTitle: '아이폰 14 Pro 128GB',
             productPrice: 950000,
-            productImage: null
+            productImage: null,
+            productId: 123,
+            partnerId: 7
           },
           {
             id: 2,
@@ -353,7 +400,9 @@ const ChatPage = () => {
             unreadCount: 0,
             productTitle: '북유럽 원목 식탁',
             productPrice: 150000,
-            productImage: null
+            productImage: null,
+            productId: 456,
+            partnerId: 8
           }
         ]);
       } finally {
@@ -362,7 +411,7 @@ const ChatPage = () => {
     };
 
     loadChatRooms();
-  }, []);
+  }, [location.search, user]);
 
   // Load messages when a room is selected
   useEffect(() => {
@@ -376,13 +425,17 @@ const ChatPage = () => {
         const response = await chatService.getMessages(selectedRoom.id);
         
         if (response.data && response.data.success) {
-          const msgs = response.data.data.map(msg => ({
-            id: msg.id,
-            text: msg.message,
-            isOwn: msg.senderId === (user && user.id),
-            timestamp: msg.timestamp,
-            sender: msg.senderId === (user && user.id) ? user.name : selectedRoom.partnerName
-          }));
+          const msgs = response.data.data.map(msg => {
+            console.log('Message from backend:', msg);
+            console.log('Current user ID:', user && user.id);
+            return {
+              id: msg.id,
+              text: msg.message,
+              isOwn: msg.sender_id === (user && user.id), // Use sender_id from backend
+              timestamp: msg.createdAt,
+              sender: msg.sender_id === (user && user.id) ? user.name : selectedRoom.partnerName
+            };
+          });
           setMessages(msgs);
         }
       } catch (error) {
@@ -460,7 +513,8 @@ const ChatPage = () => {
       // Send message to API
       const response = await chatService.sendMessage(selectedRoom.id, {
         message: messageText,
-        senderId: (user && user.id) || 1 // Default to 1 if no user
+        senderId: (user && user.id) || 1, // Default to 1 if no user
+        productId: selectedRoom.productId // Include productId
       });
 
       if (response.data && response.data.success) {

@@ -115,3 +115,30 @@ export const getRecentProducts = async (limit = 8) => {
     throw (error.response && error.response.data) || error;
   }
 };
+
+export const checkLikeStatus = async (id) => {
+  try {
+    const response = await api.get(`/products/${id}/like-status`);
+    return response.data;
+  } catch (error) {
+    throw (error.response && error.response.data) || error;
+  }
+};
+
+export const purchaseProduct = async (id) => {
+  try {
+    const response = await api.post(`/products/${id}/purchase`);
+    return response.data;
+  } catch (error) {
+    throw (error.response && error.response.data) || error;
+  }
+};
+
+export const toggleLike = async (id) => {
+  try {
+    const response = await api.post(`/products/${id}/like`);
+    return response.data;
+  } catch (error) {
+    throw (error.response && error.response.data) || error;
+  }
+};

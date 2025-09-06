@@ -27,11 +27,7 @@ const sequelize = new Sequelize(
   }
 );
 
-// In-memory storage for chat (remains unchanged)
-const chatStorage = {
-  messages: [],
-  rooms: []
-};
+
 
 const connectDB = async () => {
   try {
@@ -53,6 +49,5 @@ const connectDB = async () => {
 
 module.exports = {
   sequelize,
-  chatStorage,
   connectDB
 };
