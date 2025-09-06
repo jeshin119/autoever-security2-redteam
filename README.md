@@ -16,8 +16,9 @@ make dev    # or npm run dev
 
 Access the application:
 - 🌐 **Frontend**: http://localhost:5173
-- 🔧 **Backend API**: http://localhost:3000  
-- 📊 **Health Check**: http://localhost:3000/api/health
+- 🔧 **Backend API**: http://localhost:3001  
+- 📊 **Health Check**: http://localhost:3001/api/health
+- 🗄️ **phpMyAdmin**: http://localhost:8081
 
 ## 📋 Available Commands
 
@@ -74,14 +75,41 @@ The application uses a unified environment configuration:
 
 ```env
 NODE_ENV=development
-BACKEND_PORT=3000  
+BACKEND_PORT=3001  
 FRONTEND_PORT=5173
-VITE_API_URL=http://localhost:3000
+VITE_API_URL=http://localhost:3001
+DB_HOST=database
+DB_NAME=vintagemarket
+DB_USER=vintage_user
+DB_PASSWORD=vintage_password
 ```
 
 ### Database
-- **Development**: SQLite (automatic)
+- **Development**: MySQL 8.0 (Docker container)
 - **Production**: Configurable (PostgreSQL/MySQL recommended)
+- **Database Management**: phpMyAdmin available at http://localhost:8081
+
+#### Database Initialization
+The application automatically creates tables using Sequelize ORM when starting. For development with sample data:
+
+```bash
+# Start the development environment
+make dev
+
+# Insert sample data (after containers are running)
+docker exec -i vintage-market-mysql mysql -u root -proot_password vintagemarket < database/seed_data_clean.sql
+```
+
+#### Sample Data
+The `database/seed_data_clean.sql` file contains:
+- 5 users (1 admin + 4 regular users)
+- 7 products (electronics, furniture, fashion items)
+- 7 community posts (restaurant recommendations, tips, etc.)
+- 71 community comments
+- 3 coupons
+- 2 completed transactions
+
+**Note**: The original `db_st.sql` contains both table creation and data insertion. Since Sequelize automatically creates tables, use `seed_data_clean.sql` which contains only INSERT statements to avoid conflicts.
 
 ### Hot Reloading
 Both frontend and backend support hot reloading in development mode.
@@ -133,10 +161,11 @@ This platform contains **intentional security vulnerabilities** including:
 
 ### Backend (Node.js + Express)
 - RESTful API with intentional vulnerabilities
-- SQLite database with sample data
+- MySQL database with Sequelize ORM
 - File upload functionality
 - Real-time chat with Socket.IO
 - JWT authentication (intentionally weak)
+- Sample data seeding with `seed_data_clean.sql`
 
 ### Frontend (React + Vite)
 - Modern React application
@@ -156,8 +185,18 @@ make port-clean     # Clean conflicting processes
 
 ### Database Issues
 ```bash
-npm run db:reset    # Reset database
-npm run clean       # Clean all runtime files
+# Reset database and insert sample data
+docker exec -i vintage-market-mysql mysql -u root -proot_password vintagemarket < database/seed_data_clean.sql
+
+# Access database directly
+docker exec -it vintage-market-mysql mysql -u root -proot_password vintagemarket
+
+# Check database status
+docker exec -it vintage-market-mysql mysql -u root -proot_password vintagemarket -e "SHOW TABLES;"
+
+# Clean and restart database
+make docker-clean
+make dev
 ```
 
 ### Docker Issues
