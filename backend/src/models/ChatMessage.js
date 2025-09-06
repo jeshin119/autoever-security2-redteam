@@ -19,6 +19,10 @@ const ChatMessage = sequelize.define('ChatMessage', {
     type: DataTypes.INTEGER,
     allowNull: true,
   },
+  room_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   message: {
     type: DataTypes.TEXT,
     allowNull: false,
@@ -41,6 +45,7 @@ ChatMessage.associate = (models) => {
   ChatMessage.belongsTo(models.User, { as: 'Sender', foreignKey: 'sender_id' });
   ChatMessage.belongsTo(models.User, { as: 'Receiver', foreignKey: 'receiver_id' });
   ChatMessage.belongsTo(models.Product, { as: 'Product', foreignKey: 'product_id' });
+  ChatMessage.belongsTo(models.ChatRoom, { as: 'ChatRoom', foreignKey: 'room_id' });
 };
 
 module.exports = ChatMessage;

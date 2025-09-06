@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import styled from 'styled-components';
-import { FiSend, FiImage, FiArrowLeft, FiMoreHorizontal } from 'react-icons/fi';
+import { FiSend, FiImage, FiArrowLeft, FiMoreHorizontal, FiLogOut } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { chatService, getImageUrl } from '../services/api';
 import io from 'socket.io-client';
@@ -299,6 +299,83 @@ const ProductPrice = styled.div`
   color: ${props => props.theme.colors.primary};
 `;
 
+// Leave Chat Modal Styles
+const LeaveModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: ${props => props.show ? 'flex' : 'none'};
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const LeaveModalContent = styled.div`
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+`;
+
+const LeaveModalTitle = styled.h3`
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: ${props => props.theme.colors.text};
+`;
+
+const LeaveModalMessage = styled.p`
+  color: ${props => props.theme.colors.textSecondary};
+  margin-bottom: 2rem;
+  line-height: 1.5;
+`;
+
+const LeaveModalButtons = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+`;
+
+const CancelButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background: ${props => props.theme.colors.border};
+  color: ${props => props.theme.colors.text};
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  
+  &:hover {
+    background: ${props => props.theme.colors.textSecondary};
+  }
+`;
+
+const ConfirmLeaveButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  
+  &:hover {
+    background: #c82333;
+  }
+  
+  &:disabled {
+    background: ${props => props.theme.colors.border};
+    cursor: not-allowed;
+  }
+`;
+
 const ChatPage = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -313,6 +390,9 @@ const ChatPage = () => {
   const [chatRooms, setChatRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [leaveLoading, setLeaveLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
@@ -397,18 +477,18 @@ const ChatPage = () => {
       
       // Handle real-time messages
       newSocket.on('message', (data) => {
-        console.log('Received real-time message:', data);
+        // console.log('Received real-time message:', data);
         setMessages(prev => {
           // Skip messages sent by current user (we already have optimistic update)
           if (data.sender_id === (user && user.id)) {
-            console.log('Skipping own message from Socket.IO:', data.id);
+            // console.log('Skipping own message from Socket.IO:', data.id);
             return prev;
           }
           
           // Check if message already exists (avoid duplicates)
           const exists = prev.some(msg => msg.id === data.id);
           if (exists) {
-            console.log('Message already exists, skipping:', data.id);
+            // console.log('Message already exists, skipping:', data.id);
             return prev;
           }
           
@@ -420,7 +500,7 @@ const ChatPage = () => {
             sender: data.sender_id === (user && user.id) ? user.name : '상대방'
           };
           
-          console.log('Adding new message to UI:', newMessage);
+          // console.log('Adding new message to UI:', newMessage);
           const updatedMessages = [...prev, newMessage];
           
           // Scroll to bottom after adding received message
@@ -443,6 +523,7 @@ const ChatPage = () => {
     const loadChatRooms = async () => {
       try {
         setLoading(true);
+        setError(null); // Clear previous errors
         const response = await chatService.getChatRooms();
         
         if (response.data && response.data.success) {
@@ -458,7 +539,7 @@ const ChatPage = () => {
               productPrice: room.productPrice,
               productImage: room.productImage,
               productId: room.productId,
-              partnerId: room.id // room.id가 상대방 사용자 ID
+              partnerId: room.partnerId // 백엔드에서 반환하는 상대방 ID
             };
           });
           console.log('Processed chat rooms:', rooms);
@@ -513,33 +594,8 @@ const ChatPage = () => {
         }
       } catch (error) {
         console.error('Failed to load chat rooms or get/create chat room:', error);
-        // Fall back to mock data if API fails
-        setChatRooms([
-          {
-            id: 1,
-            partnerName: '김철수',
-            lastMessage: '안녕하세요! 아이폰 상태가 어떤가요?',
-            lastTime: formatTimestamp(new Date()),
-            unreadCount: 2,
-            productTitle: '아이폰 14 Pro 128GB',
-            productPrice: 950000,
-            productImage: null,
-            productId: 123,
-            partnerId: 7
-          },
-          {
-            id: 2,
-            partnerName: '이영희',
-            lastMessage: '네, 내일 직거래 가능할까요?',
-            lastTime: formatTimestamp(new Date(Date.now() - 3600000)),
-            unreadCount: 0,
-            productTitle: '북유럽 원목 식탁',
-            productPrice: 150000,
-            productImage: null,
-            productId: 456,
-            partnerId: 8
-          }
-        ]);
+        setError('채팅방 목록을 불러오는데 실패했습니다. 잠시 후 다시 시도해주세요.');
+        setChatRooms([]); // Clear any existing rooms
       } finally {
         setLoading(false);
       }
@@ -561,8 +617,8 @@ const ChatPage = () => {
         
         if (response.data && response.data.success) {
           const msgs = response.data.data.map(msg => {
-            console.log('Message from backend:', msg);
-            console.log('Current user ID:', user && user.id);
+            // console.log('Message from backend:', msg);
+            // console.log('Current user ID:', user && user.id);
             return {
               id: msg.id,
               text: msg.message,
@@ -647,6 +703,67 @@ const ChatPage = () => {
     setShowChat(false);
   };
 
+  const handleLeaveChat = () => {
+    if (!selectedRoom || !user || !user.id) return;
+    setShowLeaveModal(true);
+  };
+
+  const handleLeaveCancel = () => {
+    setShowLeaveModal(false);
+  };
+
+  const handleLeaveConfirm = async () => {
+    if (!selectedRoom || !user || !user.id) return;
+    
+    setLeaveLoading(true);
+    try {
+      // 1. API를 통해 채팅방 나가기
+      const response = await chatService.leaveChatRoom(selectedRoom.id);
+      
+      if (response.data && response.data.success) {
+        // 2. Socket.IO에서 방 나가기
+        if (socket && isSocketConnected) {
+          socket.emit('leaveRoom', { 
+            userId: user.id, 
+            productId: selectedRoom.productId 
+          });
+        }
+        
+        // 3. Remove current user from online users
+        setOnlineUsers(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(user.id);
+          return newSet;
+        });
+        
+        // 4. 채팅방 목록에서 제거 (하지만 데이터는 보존)
+        setChatRooms(prev => prev.filter(room => room.id !== selectedRoom.id));
+        
+        // 5. Clear current room and messages
+        setSelectedRoom(null);
+        setMessages([]);
+        
+        // 6. Go back to chat list
+        setShowList(true);
+        setShowChat(false);
+        
+        // 7. Show success message
+        if (response.data.deleted) {
+          console.log('채팅방이 완전히 삭제되었습니다.');
+        } else {
+          console.log('채팅방을 나갔습니다. 상대방이 다시 참여할 수 있습니다.');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to leave chat room:', error);
+      // Show error message to user
+      alert('채팅방 나가기에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setLeaveLoading(false);
+      setShowLeaveModal(false);
+    }
+  };
+
   const handleSendMessage = async () => {
     if (!currentMessage.trim() || !selectedRoom) return;
 
@@ -682,9 +799,7 @@ const ChatPage = () => {
       
       // Also send to API for persistence
       const response = await chatService.sendMessage(selectedRoom.id, {
-        message: messageText,
-        senderId: (user && user.id) || 1, // Default to 1 if no user
-        productId: selectedRoom.productId // Include productId
+        message: messageText
       });
 
       if (response.data && response.data.success) {
@@ -783,6 +898,41 @@ const ChatPage = () => {
         
         <ChatRooms>
           {(() => {
+            // Show error message if there's an error
+            if (error) {
+              return (
+                <div style={{
+                  padding: '2rem',
+                  textAlign: 'center',
+                  color: '#e74c3c',
+                  fontSize: '0.9rem',
+                  backgroundColor: '#fdf2f2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '8px',
+                  margin: '1rem'
+                }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                    오류가 발생했습니다
+                  </div>
+                  <div>{error}</div>
+                  <button 
+                    onClick={() => window.location.reload()} 
+                    style={{
+                      marginTop: '1rem',
+                      padding: '0.5rem 1rem',
+                      backgroundColor: '#e74c3c',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    다시 시도
+                  </button>
+                </div>
+              );
+            }
+            
             const targetProductId = searchParams.get('productId');
             const filteredRooms = chatRooms.filter(room => {
               // productId 파라미터가 있으면 해당 상품과 관련된 채팅방만 표시
@@ -848,6 +998,9 @@ const ChatPage = () => {
               </ChatHeaderLeft>
               
               <ChatHeaderRight>
+                <HeaderButton onClick={handleLeaveChat} title="채팅 나가기">
+                  <FiLogOut />
+                </HeaderButton>
                 <HeaderButton>
                   <FiMoreHorizontal />
                 </HeaderButton>
@@ -905,6 +1058,30 @@ const ChatPage = () => {
           </EmptyState>
         )}
       </ChatArea>
+
+      {/* Leave Chat Modal */}
+      <LeaveModal show={showLeaveModal}>
+        <LeaveModalContent>
+          <LeaveModalTitle>채팅방 나가기</LeaveModalTitle>
+          <LeaveModalMessage>
+            정말로 이 채팅방을 나가시겠습니까?<br />
+            <br />
+            ⚠️ 주의: 상대방도 채팅방을 나가면 모든 채팅 기록이 영구적으로 삭제됩니다.<br />
+            나가기 후에는 채팅 기록을 복구할 수 없습니다.
+          </LeaveModalMessage>
+          <LeaveModalButtons>
+            <CancelButton onClick={handleLeaveCancel}>
+              취소
+            </CancelButton>
+            <ConfirmLeaveButton 
+              onClick={handleLeaveConfirm}
+              disabled={leaveLoading}
+            >
+              {leaveLoading ? '나가는 중...' : '나가기'}
+            </ConfirmLeaveButton>
+          </LeaveModalButtons>
+        </LeaveModalContent>
+      </LeaveModal>
     </Container>
   );
 };

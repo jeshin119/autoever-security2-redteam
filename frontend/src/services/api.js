@@ -223,6 +223,8 @@ export const chatService = {
     api.get(`/chat/rooms/${roomId}/messages`, { params }),
   getOrCreateChatRoom: (targetUserId, targetProductId) =>
     api.post("/chat/rooms/get-or-create", { targetUserId, targetProductId }),
+  leaveChatRoom: (roomId) =>
+    api.post(`/chat/rooms/${roomId}/leave`),
 };
 
 // Transaction Service

@@ -24,6 +24,7 @@ const UserCoupon = require('./models/UserCoupon');
 const UserLikes = require('./models/UserLikes');
 const CommunityPostLike = require('./models/CommunityPostLike');
 const ChatMessage = require('./models/ChatMessage');
+const ChatRoom = require('./models/ChatRoom');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -52,7 +53,8 @@ const models = {
   UserCoupon, 
   UserLikes, 
   CommunityPostLike, 
-  ChatMessage
+  ChatMessage,
+  ChatRoom
 };
 
 // Set up associations after all models are loaded
@@ -125,9 +127,9 @@ io.on('connection', (socket) => {
     console.log(`[Socket.IO] Emitted userJoinedRoom to room ${roomId} for user ${userId}`);
     
     // Also notify the joining user about other users already in the room
-    const room = io.sockets.adapter.rooms.get(roomId);
+    const room = io.sockets.adapter.rooms[roomId];
     if (room) {
-      const otherUsers = Array.from(room).filter(socketId => socketId !== socket.id);
+      const otherUsers = Object.keys(room.sockets).filter(socketId => socketId !== socket.id);
       console.log(`[Socket.IO] Room ${roomId} has ${otherUsers.length} other users:`, otherUsers);
       
       // Send list of online users to the newly joined user
@@ -148,11 +150,11 @@ io.on('connection', (socket) => {
     console.log(`[Socket.IO] Received sendMessage from ${socket.id}:`, data);
     try {
       // Find the receiver_id by looking at other users in the same room
-      const room = io.sockets.adapter.rooms.get(data.productId);
+      const room = io.sockets.adapter.rooms[data.productId];
       let receiverId = null;
       
       if (room) {
-        const otherSockets = Array.from(room).filter(socketId => socketId !== socket.id);
+        const otherSockets = Object.keys(room.sockets).filter(socketId => socketId !== socket.id);
         if (otherSockets.length > 0) {
           // Get the first other user in the room as receiver
           const otherSocketId = otherSockets[0];
