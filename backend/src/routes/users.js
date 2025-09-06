@@ -276,7 +276,7 @@ router.get('/:id/products', async (req, res) => {
       include: [
         {
           model: User,
-          as: 'Buyer',
+          as: 'ProductBuyer',
           required: false,
           attributes: ['id', 'name', 'email']
         }
@@ -389,30 +389,5 @@ router.post('/:id/charge-credits', async (req, res) => {
   }
 });
 
-// Get user's products
-router.get('/:id/products', async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const products = await Product.findAll({
-      where: { userId: id },
-      order: [['createdAt', 'DESC']]
-    });
-    
-    res.json({
-      success: true,
-      message: 'User products retrieved successfully',
-      data: products
-    });
-    
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving user products',
-      error: error.message,
-      stack: error.stack
-    });
-  }
-});
 
 module.exports = router;
