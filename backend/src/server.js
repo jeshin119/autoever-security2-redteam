@@ -176,7 +176,11 @@ app.use('/uploads', (req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   res.header('Cross-Origin-Resource-Policy', 'cross-origin');
   
-  const ext = path.extname(req.path).toLowerCase();
+  // Handle Korean filename encoding
+  const decodedPath = decodeURIComponent(req.path);
+  req.url = decodedPath;
+  
+  const ext = path.extname(decodedPath).toLowerCase();
   
   // Force download if ?download=true is specified
   if (req.query.download === 'true') {

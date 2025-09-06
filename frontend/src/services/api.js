@@ -16,13 +16,17 @@ export const getImageUrl = (imagePath) => {
     return imagePath;
   }
 
-  // If it starts with /uploads, construct the full URL
+  // If it starts with /uploads, construct the full URL with proper encoding
   if (imagePath.startsWith("/uploads")) {
-    return `${BACKEND_BASE_URL}${imagePath}`;
+    // Encode Korean characters in the path
+    const encodedPath = imagePath.split('/').map(segment => 
+      segment === 'uploads' ? segment : encodeURIComponent(segment)
+    ).join('/');
+    return `${BACKEND_BASE_URL}${encodedPath}`;
   }
 
   // If it's just a filename, assume it's in uploads
-  return `${BACKEND_BASE_URL}/uploads/${imagePath}`;
+  return `${BACKEND_BASE_URL}/uploads/${encodeURIComponent(imagePath)}`;
 };
 
 // Create axios instance
