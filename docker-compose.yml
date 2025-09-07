@@ -69,7 +69,7 @@ services:
       - SESSION_SECRET=your-super-secret-session-key-here
       - BACKEND_BASE_URL=http://localhost:3001
     volumes:
-      - ./backend:/home/server/app
+      - ./backend:/app
       - /home/server/app/node_modules
     depends_on:
       database:
