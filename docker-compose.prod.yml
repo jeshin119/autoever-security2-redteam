@@ -10,7 +10,12 @@ services:
     # Use production target for frontend
     build:
       target: production
+    environment:
+      - NODE_ENV=production
     
   backend:
     # Remove volume mounts for production
     volumes: []
+    environment:
+      - NODE_ENV=production
+    command: npm start

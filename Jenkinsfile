@@ -11,26 +11,32 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo 'Building Docker Image...'
-                // 현재 디렉토리 확인
-                // sh 'pwd'
-                // sh 'ls -la'
+                echo 'Building Docker Images for Production...'
                 
-                // package.json 파일 존재 확인
-                // sh 'test -f frontend/package.json && echo "Frontend package.json exists" || echo "Frontend package.json NOT FOUND"'
-                // sh 'test -f backend/package.json && echo "Backend package.json exists" || echo "Backend package.json NOT FOUND"'
+                // 프로덕션 환경변수 설정
+                sh '''
+                    echo "NODE_ENV=production" > .env
+                    echo "VITE_API_URL=http://192.168.201.102:3001/api" >> .env
+                    echo "REACT_APP_API_URL=http://192.168.201.102:3001/api" >> .env
+                    echo "REACT_APP_BACKEND_URL=http://192.168.201.102:3001" >> .env
+                    echo "FRONTEND_URL=http://192.168.201.102:5173" >> .env
+                    echo "BACKEND_BASE_URL=http://192.168.201.102:3001" >> .env
+                    echo "DB_HOST=vintage-market-mysql" >> .env
+                    echo "DB_NAME=vintagemarket" >> .env
+                    echo "DB_USER=vintage_user" >> .env
+                    echo "DB_PASSWORD=vintage_password" >> .env
+                    echo "MYSQL_ROOT_PASSWORD=root_password" >> .env
+                    echo "MYSQL_DATABASE=vintagemarket" >> .env
+                    echo "FRONTEND_PORT=5173" >> .env
+                    echo "BACKEND_PORT=3001" >> .env
+                    echo "PMA_PORT=8081" >> .env
+                    echo "PMA_ABSOLUTE_URI=http://192.168.201.102:8081/" >> .env
+                    echo "JWT_SECRET=prod-jwt-secret-key" >> .env
+                    echo "SESSION_SECRET=prod-session-secret-key" >> .env
+                '''
                 
-                // .dockerignore 파일 확인
-                // sh 'test -f frontend/.dockerignore && echo "Frontend .dockerignore exists" || echo "Frontend .dockerignore NOT FOUND"'
-                // sh 'test -f backend/.dockerignore && echo "Backend .dockerignore exists" || echo "Backend .dockerignore NOT FOUND"'
-                
-                // docker-compose.yml 파일 확인
-                // sh 'test -f docker-compose.yml && echo "docker-compose.yml exists" || echo "docker-compose.yml NOT FOUND"'
-                
-                // 개발 모드로 빌드
-                sh 'docker compose build database'
-                sh 'docker compose build backend'
-                sh 'docker compose build frontend'
+                // 프로덕션 모드로 빌드
+                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml build'
             }
         }
                 //  // 캐시를 무시하고 새로 빌드
@@ -39,13 +45,10 @@ pipeline {
                 //  sh 'docker compose build --no-cache --pull frontend'
         stage('Deploy') {
             steps {
-                echo 'Deploy stage: Pretending to deploy the application...'
-                sh 'docker compose down backend'
-                sh 'docker compose down frontend'
-                sh 'docker compose up backend -d'
-                sh 'docker compose up frontend -d'
-                //sh 'docker compose exec backend node src/scripts/seedData.js'
-                sh 'echo "Deployment complete."'
+                echo 'Deploying to Production...'
+                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml down'
+                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d'
+                sh 'echo "Production deployment complete."'
             }
         }
     }

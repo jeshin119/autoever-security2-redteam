@@ -26,18 +26,17 @@ services:
   frontend:
     build:
       context: ./frontend
-      target: development
+      target: ${FRONTEND_TARGET:-development}
       args:
         - REACT_APP_API_URL=${REACT_APP_API_URL}
         - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
         - VITE_API_URL=${VITE_API_URL}
     container_name: vintage-market-frontend
     ports:
-      # frontend 포트는 충돌이 없으므로 그대로 5173 사용
-      - "5173:5173"
-    command: npm run dev -- --host 0.0.0.0 --port 5173
+      - "${FRONTEND_PORT:-5173}:5173"
+    command: ${FRONTEND_COMMAND:-npm run dev -- --host 0.0.0.0 --port 5173}
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-development}
       - VITE_API_URL=${VITE_API_URL}
       - REACT_APP_API_URL=${REACT_APP_API_URL}
       - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL:-http://localhost:3001}
@@ -53,23 +52,22 @@ services:
     build: ./backend
     container_name: vintage-market-backend
     ports:
-      # [수정] 충돌을 피하기 위해 호스트 포트를 3000 -> 3001로 변경
-      - "3001:3000"
-    command: npm run dev
+      - "${BACKEND_PORT:-3001}:3000"
+    command: ${BACKEND_COMMAND:-npm run dev}
     environment:
-      - NODE_ENV=development
-      - DEBUG=*
-      - PORT=3000 # 컨테이너 내부 포트는 그대로 3000 사용
-      - DB_NAME=vintagemarket
-      - DB_USER=vintage_user
-      - DB_PASSWORD=vintage_password
-      - DB_HOST=vintage-market-mysql
-      - FRONTEND_URL=http://localhost:5173
-      - JWT_SECRET=your-super-secret-jwt-key-here
-      - SESSION_SECRET=your-super-secret-session-key-here
-      - BACKEND_BASE_URL=http://localhost:3001
+      - NODE_ENV=${NODE_ENV:-development}
+      - DEBUG=${DEBUG:-*}
+      - PORT=3000
+      - DB_NAME=${DB_NAME:-vintagemarket}
+      - DB_USER=${DB_USER:-vintage_user}
+      - DB_PASSWORD=${DB_PASSWORD:-vintage_password}
+      - DB_HOST=${DB_HOST:-vintage-market-mysql}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-here}
+      - SESSION_SECRET=${SESSION_SECRET:-your-super-secret-session-key-here}
+      - BACKEND_BASE_URL=${BACKEND_BASE_URL:-http://localhost:3001}
     volumes:
-      - ./backend:/app
+      - ${BACKEND_VOLUMES:-./backend:/app}
       - /home/server/app/node_modules
     depends_on:
       database:
@@ -87,12 +85,12 @@ services:
     hostname: database
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: vintagemarket
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-vintagemarket}
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_password}"]
       interval: 5s
       timeout: 10s
       retries: 5
