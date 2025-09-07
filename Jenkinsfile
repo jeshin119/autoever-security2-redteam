@@ -31,10 +31,10 @@ pipeline {
                 sh 'test -f frontend/.dockerignore && echo "Frontend .dockerignore exists" || echo "Frontend .dockerignore NOT FOUND"'
                 sh 'test -f backend/.dockerignore && echo "Backend .dockerignore exists" || echo "Backend .dockerignore NOT FOUND"'
                 
-                // 각 서비스를 개별적으로 빌드하여 더 명확한 에러 메시지 확인
-                sh 'docker compose build database'
-                sh 'docker compose build backend'
-                sh 'docker compose build frontend'
+                 // 캐시를 무시하고 새로 빌드
+                 sh 'docker compose build --no-cache --pull database'
+                 sh 'docker compose build --no-cache --pull backend'
+                 sh 'docker compose build --no-cache --pull frontend'
             }
         }
         stage('Deploy') {
