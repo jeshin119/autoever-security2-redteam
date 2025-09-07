@@ -80,17 +80,17 @@ services:
 
   # --- 내부망(Internal) 영역 ---
   database:
-    image: mysql:8.0
+    build:
+      context: .
+      dockerfile: database/Dockerfile
     container_name: vintage-market-mysql
     hostname: database
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: vintagemarket
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
       interval: 5s
