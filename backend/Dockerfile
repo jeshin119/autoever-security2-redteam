@@ -28,8 +28,11 @@ RUN bash -c "source $NVM_DIR/nvm.sh && \
     nvm alias default $NODE_VERSION && \
     nvm use default"
 
+# package.json과 package-lock.json을 먼저 복사
 COPY --chown=server:server package*.json ./
 RUN npm install
+
+# 나머지 소스 코드 복사 (.dockerignore에 의해 node_modules는 제외됨)
 COPY --chown=server:server . .
 RUN mkdir -p uploads logs
 RUN chmod -R 755 uploads logs

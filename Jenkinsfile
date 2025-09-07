@@ -27,6 +27,10 @@ pipeline {
                 sh 'test -f frontend/package.json && echo "Frontend package.json exists" || echo "Frontend package.json NOT FOUND"'
                 sh 'test -f backend/package.json && echo "Backend package.json exists" || echo "Backend package.json NOT FOUND"'
                 
+                // .dockerignore 파일 확인
+                sh 'test -f frontend/.dockerignore && echo "Frontend .dockerignore exists" || echo "Frontend .dockerignore NOT FOUND"'
+                sh 'test -f backend/.dockerignore && echo "Backend .dockerignore exists" || echo "Backend .dockerignore NOT FOUND"'
+                
                 // 각 서비스를 개별적으로 빌드하여 더 명확한 에러 메시지 확인
                 sh 'docker compose build database'
                 sh 'docker compose build backend'
