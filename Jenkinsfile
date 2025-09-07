@@ -48,8 +48,6 @@ pipeline {
                 //  sh 'docker compose build --no-cache --pull database'
                 //  sh 'docker compose build --no-cache --pull backend'
                 //  sh 'docker compose build --no-cache --pull frontend'
-            }
-        }
         stage('Deploy') {
             steps {
                 echo 'Deploy stage: Pretending to deploy the application...'
