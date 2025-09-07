@@ -8,40 +8,29 @@ pipeline {
     }
 
     stages {
-        // 이 디버깅 단계를 추가했습니다.
-        stage('Debug Workspace') {
-            steps {
-                echo 'Listing all files in the workspace...'
-                // 작업 공간의 모든 파일 목록을 자세히 출력합니다.
-                // 이 결과를 보면 package.json 파일의 존재 여부와 위치를 알 수 있습니다.
-                dir('/workspace') {
-                    sh 'ls -al'
-                }
-            }
-        }
 
         stage('Build') {
             steps {
                 echo 'Building Docker Image...'
-                // 작업 디렉토리를 /workspace로 변경 (Jenkins 볼륨 마운트)
-                dir('/workspace') {
-                    // 현재 디렉토리 확인
-                    sh 'pwd'
-                    sh 'ls -la'
-                    
-                    // package.json 파일 존재 확인
-                    sh 'test -f frontend/package.json && echo "Frontend package.json exists" || echo "Frontend package.json NOT FOUND"'
-                    sh 'test -f backend/package.json && echo "Backend package.json exists" || echo "Backend package.json NOT FOUND"'
-                    
-                    // .dockerignore 파일 확인
-                    sh 'test -f frontend/.dockerignore && echo "Frontend .dockerignore exists" || echo "Frontend .dockerignore NOT FOUND"'
-                    sh 'test -f backend/.dockerignore && echo "Backend .dockerignore exists" || echo "Backend .dockerignore NOT FOUND"'
-                    
-                    // 개발 모드로 빌드 (볼륨 마운트 사용)
-                    sh 'docker compose build database'
-                    sh 'docker compose build backend'
-                    sh 'docker compose build frontend'
-                }
+                // 현재 디렉토리 확인
+                // sh 'pwd'
+                // sh 'ls -la'
+                
+                // package.json 파일 존재 확인
+                // sh 'test -f frontend/package.json && echo "Frontend package.json exists" || echo "Frontend package.json NOT FOUND"'
+                // sh 'test -f backend/package.json && echo "Backend package.json exists" || echo "Backend package.json NOT FOUND"'
+                
+                // .dockerignore 파일 확인
+                // sh 'test -f frontend/.dockerignore && echo "Frontend .dockerignore exists" || echo "Frontend .dockerignore NOT FOUND"'
+                // sh 'test -f backend/.dockerignore && echo "Backend .dockerignore exists" || echo "Backend .dockerignore NOT FOUND"'
+                
+                // docker-compose.yml 파일 확인
+                // sh 'test -f docker-compose.yml && echo "docker-compose.yml exists" || echo "docker-compose.yml NOT FOUND"'
+                
+                // 개발 모드로 빌드
+                sh 'docker compose build database'
+                sh 'docker compose build backend'
+                sh 'docker compose build frontend'
             }
         }
                 //  // 캐시를 무시하고 새로 빌드
@@ -51,15 +40,12 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploy stage: Pretending to deploy the application...'
-                // 작업 디렉토리를 /workspace로 변경 (Jenkins 볼륨 마운트)
-                dir('/workspace') {
-                    sh 'docker compose down backend'
-                    sh 'docker compose down frontend'
-                    sh 'docker compose up backend -d'
-                    sh 'docker compose up frontend -d'
-                    //sh 'docker compose exec backend node src/scripts/seedData.js'
-                    sh 'echo "Deployment complete."'
-                }
+                sh 'docker compose down backend'
+                sh 'docker compose down frontend'
+                sh 'docker compose up backend -d'
+                sh 'docker compose up frontend -d'
+                //sh 'docker compose exec backend node src/scripts/seedData.js'
+                sh 'echo "Deployment complete."'
             }
         }
     }
