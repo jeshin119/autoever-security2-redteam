@@ -42,8 +42,8 @@ services:
       - REACT_APP_API_URL=${REACT_APP_API_URL}
       - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL:-http://localhost:3001}
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      # - ./frontend:/app
+      # - /app/node_modules
     depends_on:
       - backend
     networks:
