@@ -17,10 +17,7 @@ pids/
 *.pid.lock
 
 # Database files
-*.sqlite
 *.db
-*.sqlite3
-database/*.sqlite
 database/*.db
 
 # # Environment variables
