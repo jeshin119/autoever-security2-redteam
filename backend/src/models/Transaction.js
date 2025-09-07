@@ -7,17 +7,17 @@ const Transaction = sequelize.define('Transaction', {
     primaryKey: true,
     autoIncrement: true
   },
-  buyerId: {
+  buyer_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     // Intentionally no foreign key constraint
   },
-  sellerId: {
+  seller_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     // Intentionally no foreign key constraint
   },
-  productId: {
+  product_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     // Intentionally no foreign key constraint

@@ -76,6 +76,7 @@ const App = () => {
             <PrivateRoute exact path="/chat/:roomId" component={ChatPage} />
             <PrivateRoute exact path="/transactions" component={TransactionPage} />
             <PrivateRoute exact path="/notifications" component={NotificationPage} />
+            <PrivateRoute exact path="/purchase/success" component={PurchaseSuccessPage} />
             
             {/* Admin Routes */}
             <AdminRoute exact path="/admin" component={AdminPage} />

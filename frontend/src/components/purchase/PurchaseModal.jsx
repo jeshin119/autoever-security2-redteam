@@ -273,7 +273,7 @@ const TextArea = styled.textarea`
   border: 1px solid ${props => props.theme.colors.border};
   border-radius: 6px;
   font-size: 1rem;
-  resize: vertical;
+  resize: none;
   min-height: 60px;
   
   &:focus {
@@ -417,11 +417,11 @@ const PurchaseModal = ({
   const remainingCredits = userCredits - totalAfterDiscount;
   const hasInsufficientCredits = remainingCredits < 0;
 
-  // 전화번호 검증 정규표현식
+  // 전화번호 검증 정규표현식 (테스트를 위해 임시 비활성화)
   const validatePhoneNumber = (phone) => {
-    // 한국 휴대폰 번호: 010-XXXX-XXXX 형식
-    const phoneRegex = /^(01[0-9])?-?(\d+)*-?(\d+)*$/;
-    return phoneRegex.test(phone);
+    // 백엔드 ReDoS 테스트를 위해 프론트엔드 검증 비활성화
+    // 원래: const phoneRegex = /^(01[0-9])?-?(\d+)*-?(\d+)*$/;
+    return true; // 항상 통과
   };
 
   const handleInputChange = (field, value) => {
@@ -705,25 +705,7 @@ const PurchaseModal = ({
               </SummaryRow>
             </SummaryCard>
             
-            <CreditInfo>
-              <CreditRow>
-                <CreditLabel>보유 크레딧</CreditLabel>
-                <CreditAmount>{formatPrice(userCredits)}</CreditAmount>
-              </CreditRow>
-              <CreditRow>
-                <CreditLabel>결제 후 잔액</CreditLabel>
-                <CreditAmount insufficient={hasInsufficientCredits}>
-                  {formatPrice(remainingCredits)}
-                </CreditAmount>
-              </CreditRow>
-            </CreditInfo>
 
-            {hasInsufficientCredits && (
-              <WarningMessage>
-                <FiAlertCircle />
-                크레딧이 부족합니다. 충전 후 다시 시도해주세요.
-              </WarningMessage>
-            )}
           </PaymentSection>
 
           <div style={{ 
@@ -746,7 +728,7 @@ const PurchaseModal = ({
           <Button 
             primary 
             onClick={handlePurchase}
-            disabled={isLoading || hasInsufficientCredits}
+            disabled={isLoading}
           >
             {isLoading ? (
               <>

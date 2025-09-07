@@ -21,17 +21,23 @@ router.get('/', authenticateToken, async (req, res) => {
 
     let whereClause = {};
 
-    // Filter by transaction type
-    if (type === 'purchase') {
-      whereClause.buyerId = userId;
-    } else if (type === 'sale') {
-      whereClause.sellerId = userId;
+    // 관리자인 경우 모든 거래 조회 가능
+    if (req.user && req.user.role === 'admin') {
+      // 관리자는 모든 거래를 볼 수 있음 (whereClause 비워둠)
     } else {
-      // All transactions (both purchases and sales)
-      whereClause[Op.or] = [
-        { buyerId: userId },
-        { sellerId: userId }
-      ];
+      // 일반 사용자는 본인 거래만 조회
+      // Filter by transaction type
+      if (type === 'purchase') {
+        whereClause.buyer_id = userId;
+      } else if (type === 'sale') {
+        whereClause.seller_id = userId;
+      } else {
+        // All transactions (both purchases and sales)
+        whereClause[Op.or] = [
+          { buyer_id: userId },
+          { seller_id: userId }
+        ];
+      }
     }
 
     // Intentionally vulnerable: No proper access control, exposing sensitive data
