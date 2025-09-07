@@ -19,8 +19,18 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building Docker Image...'
-                sh 'docker compose build backend frontend database'
+                // 현재 디렉토리 확인
+                sh 'pwd'
+                sh 'ls -la'
                 
+                // package.json 파일 존재 확인
+                sh 'test -f frontend/package.json && echo "Frontend package.json exists" || echo "Frontend package.json NOT FOUND"'
+                sh 'test -f backend/package.json && echo "Backend package.json exists" || echo "Backend package.json NOT FOUND"'
+                
+                // 각 서비스를 개별적으로 빌드하여 더 명확한 에러 메시지 확인
+                sh 'docker compose build database'
+                sh 'docker compose build backend'
+                sh 'docker compose build frontend'
             }
         }
         stage('Deploy') {
