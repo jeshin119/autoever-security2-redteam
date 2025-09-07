@@ -14,5 +14,9 @@ RUN apt-get update && \
     apt-get update && \
     apt-get install -y git docker-ce-cli
 
+# Docker BuildKit 설정을 위한 환경 변수 추가
+ENV DOCKER_BUILDKIT=1
+ENV BUILDKIT_PROGRESS=plain
+
 # 보안을 위해 다시 jenkins 사용자로 전환합니다.
 USER jenkins

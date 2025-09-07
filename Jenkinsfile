@@ -3,6 +3,8 @@ pipeline {
 
     environment {
         COMPOSE_PROJECT_NAME = 'mitre-project'
+        DOCKER_BUILDKIT = '0'  // Docker BuildKit 비활성화
+        BUILDKIT_PROGRESS = 'plain'
     }
 
     stages {
