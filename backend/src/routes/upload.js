@@ -26,16 +26,22 @@ function isValidFile(file) {
 
 // Function to generate unique filename with numbered suffix
 function generateUniqueFilename(originalName, uploadDir) {
-  const nameWithoutExt = path.parse(originalName).name;
-  const extension = path.parse(originalName).ext;
+  const parsed = path.parse(originalName);
+  const nameWithoutExt = parsed.name;
+  const extension = parsed.ext;
+  
+  // Generate a safe filename using timestamp and random string
+  const timestamp = Date.now();
+  const randomStr = Math.random().toString(36).substring(2, 8);
+  const safeFilename = `${timestamp}_${randomStr}${extension}`;
   
   let counter = 0;
-  let filename = originalName;
+  let filename = safeFilename;
   
   // Check if file exists and generate numbered suffix if needed
   while (fs.existsSync(path.join(uploadDir, filename))) {
     counter++;
-    filename = `${nameWithoutExt} (${counter})${extension}`;
+    filename = `${timestamp}_${randomStr}_${counter}${extension}`;
   }
   
   return filename;

@@ -515,14 +515,9 @@ const toImagesArray = (val) => {
   if (Array.isArray(val)) return val;
   if (typeof val === 'string') {
     try {
-      const trimmed = val.trim();
-      if (trimmed === '[]' || trimmed === '' || trimmed === 'null') {
-        return [];
-      }
-      const parsed = JSON.parse(trimmed);
+      const parsed = JSON.parse(val);
       return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      console.error('Error parsing images:', error, 'Input:', val);
+    } catch {
       return [];
     }
   }
@@ -650,11 +645,7 @@ const ProductDetailPage = () => {
         // Filter out current product and limit to 4 items
         const related = response.data.data
           .filter(p => p.id !== parseInt(id))
-          .slice(0, 4)
-          .map(p => ({
-            ...p,
-            images: toImagesArray(p.images) // Ensure images are properly parsed
-          }));
+          .slice(0, 4);
         setRelatedProducts(related);
       }
     } catch (error) {
@@ -1082,7 +1073,7 @@ const ProductDetailPage = () => {
                 to={`/products/${relatedProduct.id}`}
               >
                 <RelatedProductImage
-                  image={getImageUrl(relatedProduct.images && relatedProduct.images.length > 0 ? relatedProduct.images[0] : null)}
+                  image={getImageUrl((relatedProduct.images && relatedProduct.images[0]))}
                 />
                 <RelatedProductInfo>
                   <RelatedProductTitle>{relatedProduct.title}</RelatedProductTitle>

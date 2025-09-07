@@ -4,7 +4,6 @@ import styled from 'styled-components';
 import { FiUpload, FiX, FiMapPin, FiDollarSign, FiTag } from 'react-icons/fi';
 import { productService, getImageUrl, uploadService } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from 'react-toastify';
 
 const Container = styled.div`
   max-width: 800px;
@@ -283,7 +282,6 @@ const ProductCreatePage = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [imageFiles, setImageFiles] = useState([]);
-  const [uploadLoading, setUploadLoading] = useState(false);
   const isMountedRef = useRef(true);
 
   const categories = [
@@ -379,7 +377,7 @@ const ProductCreatePage = () => {
     }
   };
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
     const totalImages = formData.images.length + imageFiles.length + files.length;
 
@@ -388,50 +386,19 @@ const ProductCreatePage = () => {
       return;
     }
 
-    // Filter valid image files
-    const validFiles = files.filter(file => {
-      if (!file.type.startsWith('image/')) {
-        alert(`${file.name}은(는) 이미지 파일이 아닙니다.`);
-        return false;
-      }
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        alert(`${file.name}은(는) 10MB를 초과합니다.`);
-        return false;
-      }
-      return true;
-    });
-
-    if (validFiles.length === 0) return;
-
-    setUploadLoading(true);
-    
-    try {
-      const uploadPromises = validFiles.map(async (file) => {
-        console.log('Uploading file:', file.name);
-        const response = await uploadService.uploadImage(file);
-        console.log('Upload response:', response);
-        const fileData = response.data.data || response.data; // Handle nested data structure
-        return {
-          id: Date.now() + Math.random(),
-          name: file.name,
-          size: file.size,
-          url: fileData.url || fileData.path,
-          file: file
+    files.forEach(file => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setImageFiles(prev => [...prev, {
+            file,
+            preview: e.target.result,
+            id: Date.now() + Math.random()
+          }]);
         };
-      });
-
-      const uploadedFiles = await Promise.all(uploadPromises);
-      setImageFiles(prev => [...prev, ...uploadedFiles]);
-      toast.success(`${uploadedFiles.length}개의 파일이 업로드되었습니다.`);
-    } catch (error) {
-      console.error('File upload failed:', error);
-      toast.error('파일 업로드에 실패했습니다.');
-    } finally {
-      // Only update state if component is still mounted
-      if (isMountedRef.current) {
-        setUploadLoading(false);
+        reader.readAsDataURL(file);
       }
-    }
+    });
   };
 
   const removeImage = async (imageId, isExisting = false) => {
@@ -453,15 +420,7 @@ const ProductCreatePage = () => {
           images: prev.images.filter((_, index) => index !== imageId)
         }));
       } else {
-        // For new images, delete from server and remove from state
-        const imageToRemove = imageFiles.find(img => img.id === imageId);
-        if (imageToRemove && imageToRemove.url) {
-          // Extract filename from URL
-          const filename = imageToRemove.url.split('/').pop();
-          await uploadService.deleteFile(filename);
-          console.log(`Uploaded image deleted from server: ${filename}`);
-        }
-        
+        // For new images, they haven't been uploaded to server yet, so just remove from state
         setImageFiles(prev => prev.filter(img => img.id !== imageId));
       }
     } catch (error) {
@@ -521,20 +480,24 @@ const ProductCreatePage = () => {
         userid: user && user.id
       };
 
-      // Combine existing images with newly uploaded images
-      const allImages = [
-        ...formData.images,
-        ...imageFiles.map(img => img.url)
-      ].filter(Boolean); // Remove any null/undefined values
-      
-      submitData.images = allImages;
-
       if (isEdit) {
-        await productService.updateProduct(id, submitData);
+        // 수정 모드에서는 기존 이미지 정보를 유지
+        if (imageFiles.length === 0) {
+          // 새로운 이미지 파일이 없으면 기존 이미지 유지
+          submitData.images = formData.images;
+        }
+        // 새로운 이미지 파일이 있으면 productService에서 처리
+        
+        await productService.updateProduct(id, submitData, imageFiles);
         alert('상품이 수정되었습니다.');
         history.push(`/products/${id}`);
       } else {
-        const response = await productService.createProduct(submitData);
+        // 새 상품 등록 모드
+        if (imageFiles.length === 0) {
+          submitData.images = formData.images;
+        }
+        
+        const response = await productService.createProduct(submitData, imageFiles);
         alert('상품이 등록되었습니다.');
         const newId = (response && response.data && response.data.id) || (response && response.data && response.data.data && response.data.data.id);
         history.push(`/products/${newId}`);
@@ -601,7 +564,7 @@ const ProductCreatePage = () => {
               ))}
               {imageFiles.map((img) => (
                 <ImagePreview key={img.id}>
-                  <img src={img.url || img.preview} alt="미리보기" />
+                  <img src={img.preview} alt="미리보기" />
                   <RemoveImageButton onClick={() => removeImage(img.id, false)}>
                     <FiX size={12} />
                   </RemoveImageButton>

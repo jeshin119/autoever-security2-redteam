@@ -362,14 +362,9 @@ const toImagesArray = (val) => {
   if (Array.isArray(val)) return val;
   if (typeof val === 'string') {
     try {
-      const trimmed = val.trim();
-      if (trimmed === '[]' || trimmed === '' || trimmed === 'null') {
-        return [];
-      }
-      const parsed = JSON.parse(trimmed);
+      const parsed = JSON.parse(val);
       return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      console.error('Error parsing images:', error, 'Input:', val);
+    } catch {
       return [];
     }
   }
