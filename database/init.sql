@@ -18,3 +18,6 @@ FLUSH PRIVILEGES;
 
 -- 사용자 생성 확인
 SELECT User, Host FROM mysql.user WHERE User='vintage_user';
+
+-- 초기화 완료 로그
+SELECT 'MySQL initialization completed successfully' as status;
