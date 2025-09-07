@@ -30,7 +30,6 @@ RUN bash -c "source $NVM_DIR/nvm.sh && \
 
 COPY --chown=server:server package*.json ./
 RUN npm install
-RUN npm install -g pm2
 COPY --chown=server:server . .
 RUN mkdir -p uploads logs
 RUN chmod -R 755 uploads logs

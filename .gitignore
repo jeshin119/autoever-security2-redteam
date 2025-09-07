@@ -51,9 +51,6 @@ database/*.db
 ehthumbs.db
 Thumbs.db
 
-# PM2 logs and process files
-*.pm2
-.pm2/
 
 # Docker
 .dockerignore
