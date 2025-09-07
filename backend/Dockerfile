@@ -2,12 +2,16 @@ FROM ubuntu:18.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # 🔑 Use default Ubuntu repositories which support multi-architecture
-RUN apt-get update && apt-get install -y \
-    curl \
-    sudo \
-    python3 \
-    build-essential \
- && rm -rf /var/lib/apt/lists/*
+RUN for i in 1 2 3; do \
+        apt-get update && \
+        apt-get install -y --fix-missing \
+            curl \
+            sudo \
+            python3 \
+            build-essential && \
+        break || sleep 10; \
+    done && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m server && \
     echo "server:123456" | chpasswd && \
