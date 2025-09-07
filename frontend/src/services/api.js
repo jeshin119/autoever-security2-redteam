@@ -21,16 +21,30 @@ export const getImageUrl = (imagePath) => {
   }
 
   // If it's a JSON string (array), parse it and get the first image
-  if (typeof imagePath === 'string' && imagePath.startsWith('[')) {
+  if (typeof imagePath === 'string' && imagePath.trim().startsWith('[')) {
     try {
-      const images = JSON.parse(imagePath);
+      // Handle empty or malformed JSON strings
+      const trimmedPath = imagePath.trim();
+      if (trimmedPath === '[]' || trimmedPath === '' || trimmedPath === 'null') {
+        return null;
+      }
+      
+      const images = JSON.parse(trimmedPath);
       if (Array.isArray(images) && images.length > 0) {
-        imagePath = images[0];
+        // Get the first image object or string
+        const firstImage = images[0];
+        if (typeof firstImage === 'object' && firstImage.url) {
+          imagePath = firstImage.url;
+        } else if (typeof firstImage === 'string') {
+          imagePath = firstImage;
+        } else {
+          return null;
+        }
       } else {
         return null;
       }
     } catch (e) {
-      console.error('Error parsing image JSON:', e);
+      console.error('Error parsing image JSON:', e, 'Input:', imagePath);
       return null;
     }
   }

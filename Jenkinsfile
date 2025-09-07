@@ -3,24 +3,49 @@ pipeline {
 
     environment {
         COMPOSE_PROJECT_NAME = 'mitre-project'
-        DOCKER_BUILDKIT = '0'
+        DOCKER_BUILDKIT = '0'  // Docker BuildKit 비활성화
         BUILDKIT_PROGRESS = 'plain'
     }
 
     stages {
+
         stage('Build') {
             steps {
-                echo 'Building Docker Images for Production...'
-                sh 'cat > .env << EOF\nNODE_ENV=production\nVITE_API_URL=http://192.168.201.102:3001/api\nREACT_APP_API_URL=http://192.168.201.102:3001/api\nREACT_APP_BACKEND_URL=http://192.168.201.102:3001\nFRONTEND_URL=http://192.168.201.102:5173\nBACKEND_BASE_URL=http://192.168.201.102:3001\nDB_HOST=vintage-market-mysql\nDB_NAME=vintagemarket\nDB_USER=vintage_user\nDB_PASSWORD=vintage_password\nMYSQL_ROOT_PASSWORD=root_password\nMYSQL_DATABASE=vintagemarket\nEOF'
-                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml build'
+                echo 'Building Docker Image...'
+                // 현재 디렉토리 확인
+                // sh 'pwd'
+                // sh 'ls -la'
+                
+                // package.json 파일 존재 확인
+                // sh 'test -f frontend/package.json && echo "Frontend package.json exists" || echo "Frontend package.json NOT FOUND"'
+                // sh 'test -f backend/package.json && echo "Backend package.json exists" || echo "Backend package.json NOT FOUND"'
+                
+                // .dockerignore 파일 확인
+                // sh 'test -f frontend/.dockerignore && echo "Frontend .dockerignore exists" || echo "Frontend .dockerignore NOT FOUND"'
+                // sh 'test -f backend/.dockerignore && echo "Backend .dockerignore exists" || echo "Backend .dockerignore NOT FOUND"'
+                
+                // docker-compose.yml 파일 확인
+                // sh 'test -f docker-compose.yml && echo "docker-compose.yml exists" || echo "docker-compose.yml NOT FOUND"'
+                
+                // 개발 모드로 빌드
+                sh 'docker compose build database'
+                sh 'docker compose build backend'
+                sh 'docker compose build frontend'
             }
         }
+                //  // 캐시를 무시하고 새로 빌드
+                //  sh 'docker compose build --no-cache --pull database'
+                //  sh 'docker compose build --no-cache --pull backend'
+                //  sh 'docker compose build --no-cache --pull frontend'
         stage('Deploy') {
             steps {
-                echo 'Deploying to Production...'
-                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml down'
-                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d'
-                sh 'echo "Production deployment complete."'
+                echo 'Deploy stage: Pretending to deploy the application...'
+                sh 'docker compose down backend'
+                sh 'docker compose down frontend'
+                sh 'docker compose up backend -d'
+                sh 'docker compose up frontend -d'
+                //sh 'docker compose exec backend node src/scripts/seedData.js'
+                sh 'echo "Deployment complete."'
             }
         }
     }
