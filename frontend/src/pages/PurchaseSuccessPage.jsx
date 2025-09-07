@@ -179,7 +179,7 @@ const ActionButtons = styled.div`
   }
 `;
 
-const Button = styled(Link)`
+const PrimaryButton = styled(Link)`
   flex: 1;
   padding: 1rem 2rem;
   border-radius: 8px;
@@ -191,24 +191,34 @@ const Button = styled(Link)`
   gap: 0.5rem;
   transition: all 0.2s ease;
   white-space: nowrap;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
   
-  ${props => props.primary ? `
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-    
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-    }
-  ` : `
-    background: #f8f9fa;
-    color: #4a5568;
-    border: 1px solid #e2e8f0;
-    
-    &:hover {
-      background: #e2e8f0;
-    }
-  `}
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  }
+`;
+
+const SecondaryButton = styled(Link)`
+  flex: 1;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  background: #f8f9fa;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+  
+  &:hover {
+    background: #e2e8f0;
+  }
 `;
 
 const LoadingSpinner = styled.div`
@@ -431,7 +441,7 @@ const PurchaseSuccessPage = function() {
       <Container>
         <SuccessCard>
           <ErrorMessage>{error}</ErrorMessage>
-          <Button to="/">홈으로 돌아가기</Button>
+          <SecondaryButton to="/">홈으로 돌아가기</SecondaryButton>
         </SuccessCard>
       </Container>
     );
@@ -590,10 +600,16 @@ const PurchaseSuccessPage = function() {
                 <span>
                   할인
                   {transaction.appliedCoupon && (
-                    <>
+                    <span>
                       <FiTag size={14} style={{ marginLeft: '0.25rem' }} />
-                      ({JSON.parse(transaction.appliedCoupon).name})
-                    </>
+                      ({(() => {
+                        try {
+                          return JSON.parse(transaction.appliedCoupon).name;
+                        } catch (e) {
+                          return '쿠폰';
+                        }
+                      })()})
+                    </span>
                   )}
                 </span>
                 <DiscountText>-{formatPrice(transaction.discount)}</DiscountText>
@@ -608,18 +624,18 @@ const PurchaseSuccessPage = function() {
         )}
 
         <ActionButtons>
-          <Button to="/my">
+          <SecondaryButton to="/my">
             <FiShoppingBag />
             구매내역 보기
-          </Button>
-          <Button to="/products" primary>
+          </SecondaryButton>
+          <PrimaryButton to="/products">
             <FiArrowRight />
             쇼핑 계속하기
-          </Button>
-          <Button to="/">
+          </PrimaryButton>
+          <SecondaryButton to="/">
             <FiHome />
             홈으로
-          </Button>
+          </SecondaryButton>
         </ActionButtons>
       </SuccessCard>
     </Container>

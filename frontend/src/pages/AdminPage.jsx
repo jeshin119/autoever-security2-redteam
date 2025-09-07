@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { adminService } from '../services/api';
 
 // Lazy load admin management pages
 const UserManagementPage = lazy(() => import('./admin/UserManagementPage'));
@@ -136,10 +137,11 @@ const AdminPage = () => {
     totalUsers: 0,
     totalProducts: 0,
     totalTransactions: 0,
-    activeUsers: 0
+    pageViews: 0
   });
   const [recentUsers, setRecentUsers] = useState([]);
   const [recentProducts, setRecentProducts] = useState([]);
+  const [recentTransactions, setRecentTransactions] = useState([]);
 
   useEffect(() => {
     // 관리자가 아닌 경우 홈으로 리다이렉트
@@ -157,34 +159,38 @@ const AdminPage = () => {
 
     // 관리자 통계 및 데이터 로드
     loadAdminData();
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, history]);
 
   const loadAdminData = async () => {
     try {
-      // 실제 구현에서는 API 호출을 통해 데이터를 가져옴
-      // 여기서는 더미 데이터를 사용
-      setStats({
-        totalUsers: 1250,
-        totalProducts: 3420,
-        totalTransactions: 1890,
-        activeUsers: 890
-      });
-
-      setRecentUsers([
-        { id: 1, name: '김철수', email: 'kim@example.com', role: 'user', status: 'active', createdAt: '2024-01-15' },
-        { id: 2, name: '이영희', email: 'lee@example.com', role: 'admin', status: 'active', createdAt: '2024-01-14' },
-        { id: 3, name: '박민수', email: 'park@example.com', role: 'user', status: 'inactive', createdAt: '2024-01-13' },
-        { id: 4, name: '최지영', email: 'choi@example.com', role: 'user', status: 'active', createdAt: '2024-01-12' },
-        { id: 5, name: '정현우', email: 'jung@example.com', role: 'user', status: 'active', createdAt: '2024-01-11' }
+      // 실제 API 호출로 데이터 가져오기
+      const [statsResponse, usersResponse, productsResponse, transactionsResponse] = await Promise.all([
+        adminService.getStats(),
+        adminService.getRecentUsers(5),
+        adminService.getRecentProducts(5),
+        adminService.getRecentTransactions(5)
       ]);
 
-      setRecentProducts([
-        { id: 1, name: '빈티지 의자', category: '가구', price: 150000, status: 'active', seller: '김철수' },
-        { id: 2, name: '레트로 램프', category: '조명', price: 80000, status: 'pending', seller: '이영희' },
-        { id: 3, name: '옛날 카메라', category: '전자제품', price: 200000, status: 'active', seller: '박민수' },
-        { id: 4, name: '클래식 시계', category: '액세서리', price: 120000, status: 'active', seller: '최지영' },
-        { id: 5, name: '빈티지 책상', category: '가구', price: 300000, status: 'inactive', seller: '정현우' }
-      ]);
+      // 통계 데이터 설정
+      if (statsResponse.success) {
+        setStats(statsResponse.data);
+      }
+
+      // 최근 가입 사용자 설정
+      if (usersResponse.success) {
+        setRecentUsers(usersResponse.data);
+      }
+
+      // 최근 등록 상품 설정
+      if (productsResponse.success) {
+        setRecentProducts(productsResponse.data);
+      }
+
+      // 최근 거래 내역 설정
+      if (transactionsResponse.success) {
+        setRecentTransactions(transactionsResponse.data);
+      }
+
     } catch (error) {
       console.error('Admin data loading error:', error);
       toast.error('관리자 데이터를 불러오는데 실패했습니다.');
@@ -280,8 +286,8 @@ const AdminPage = () => {
         </AdminCard>
 
         <AdminCard>
-          <CardTitle>🟢 활성 사용자</CardTitle>
-          <StatNumber>{stats.activeUsers.toLocaleString()}</StatNumber>
+          <CardTitle>📊 페이지 방문수</CardTitle>
+          <StatNumber>{stats.pageViews.toLocaleString()}</StatNumber>
           <CardContent>최근 30일 활동 사용자</CardContent>
           <ActionButton onClick={handleSystemSettings}>시스템 설정</ActionButton>
         </AdminCard>
@@ -312,11 +318,11 @@ const AdminPage = () => {
                   </StatusBadge>
                 </Td>
                 <Td>
-                  <StatusBadge role={user.status === 'active' ? 'admin' : 'user'}>
-                    {user.status === 'active' ? '활성' : '비활성'}
+                  <StatusBadge role={user.isActive ? 'admin' : 'user'}>
+                    {user.isActive ? '활성' : '비활성'}
                   </StatusBadge>
                 </Td>
-                <Td>{user.createdAt}</Td>
+                <Td>{new Date(user.createdAt).toLocaleDateString('ko-KR')}</Td>
               </tr>
             ))}
           </tbody>
@@ -340,17 +346,70 @@ const AdminPage = () => {
             {recentProducts.map(product => (
               <tr key={product.id}>
                 <Td>{product.id}</Td>
-                <Td>{product.name}</Td>
+                <Td>{product.title}</Td>
                 <Td>{product.category}</Td>
-                <Td>₩{product.price.toLocaleString()}</Td>
+                <Td>₩{parseFloat(product.price).toLocaleString()}</Td>
                 <Td>
-                  <StatusBadge role={product.status === 'active' ? 'admin' : 'user'}>
-                    {product.status === 'active' ? '활성' : product.status === 'pending' ? '검토중' : '비활성'}
+                  <StatusBadge role={!product.isSold ? 'admin' : 'user'}>
+                    {product.isSold ? '판매완료' : '판매중'}
                   </StatusBadge>
                 </Td>
-                <Td>{product.seller}</Td>
+                <Td>{(product.User && product.User.name) || '판매자 정보 없음'}</Td>
               </tr>
             ))}
+          </tbody>
+        </Table>
+      </TableContainer>
+
+      {/* 최근 거래 내역 */}
+      <TableContainer>
+        <CardTitle>💳 최근 거래 내역</CardTitle>
+        <Table>
+          <thead>
+            <tr>
+              <Th>거래ID</Th>
+              <Th>상품명</Th>
+              <Th>구매자</Th>
+              <Th>판매자</Th>
+              <Th>거래금액</Th>
+              <Th>상태</Th>
+              <Th>거래일시</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentTransactions.map(transaction => {
+              // paymentData JSON에서 구매자/판매자 정보 추출
+              let buyerName = '구매자 정보 없음';
+              let sellerName = '판매자 정보 없음';
+              
+              try {
+                if (transaction.paymentData) {
+                  const paymentInfo = JSON.parse(transaction.paymentData);
+                  buyerName = (paymentInfo.buyerInfo && paymentInfo.buyerInfo.name) || '구매자 정보 없음';
+                  sellerName = (paymentInfo.sellerInfo && paymentInfo.sellerInfo.name) || '판매자 정보 없음';
+                }
+              } catch (error) {
+                console.error('paymentData parsing error:', error);
+              }
+              
+              return (
+                <tr key={transaction.id}>
+                  <Td>{transaction.id}</Td>
+                  <Td>{(transaction.Product && transaction.Product.title) || '상품정보 없음'}</Td>
+                  <Td>{buyerName}</Td>
+                  <Td>{sellerName}</Td>
+                  <Td>₩{parseFloat(transaction.amount).toLocaleString()}</Td>
+                  <Td>
+                    <StatusBadge role={transaction.status === 'completed' ? 'admin' : 'user'}>
+                      {transaction.status === 'completed' ? '완료' : 
+                       transaction.status === 'pending' ? '진행중' : 
+                       transaction.status === 'cancelled' ? '취소' : '환불'}
+                    </StatusBadge>
+                  </Td>
+                  <Td>{new Date(transaction.createdAt).toLocaleDateString('ko-KR')}</Td>
+                </tr>
+              );
+            })}
           </tbody>
         </Table>
       </TableContainer>
