@@ -32,10 +32,12 @@ RUN bash -c "source $NVM_DIR/nvm.sh && \
     nvm alias default $NODE_VERSION && \
     nvm use default"
 
+# root로 다시 전환하여 권한 설정
+USER root
 # package.json과 package-lock.json을 먼저 복사
 COPY --chown=server:server package*.json ./
 
-# 디렉토리 권한 설정
+# 디렉토리 권한 설정 (root 권한으로 실행)
 RUN chown -R server:server /home/server/app
 RUN chmod -R 755 /home/server/app
 
