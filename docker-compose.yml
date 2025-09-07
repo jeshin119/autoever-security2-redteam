@@ -88,8 +88,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: vintagemarket
-      MYSQL_USER: vintage_user
-      MYSQL_PASSWORD: vintage_password
     volumes:
       - mysql_data:/var/lib/mysql
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
