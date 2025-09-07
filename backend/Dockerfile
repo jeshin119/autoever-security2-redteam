@@ -34,10 +34,22 @@ RUN bash -c "source $NVM_DIR/nvm.sh && \
 
 # package.json과 package-lock.json을 먼저 복사
 COPY --chown=server:server package*.json ./
+
+# 디렉토리 권한 설정
+RUN chown -R server:server /home/server/app
+RUN chmod -R 755 /home/server/app
+
+# server 사용자로 npm install 실행
+USER server
 RUN npm install
 
+# root로 다시 전환하여 파일 복사
+USER root
 # 나머지 소스 코드 복사 (.dockerignore에 의해 node_modules는 제외됨)
 COPY --chown=server:server . .
+
+# server 사용자로 다시 전환
+USER server
 RUN mkdir -p uploads logs
 RUN chmod -R 755 uploads logs
 
