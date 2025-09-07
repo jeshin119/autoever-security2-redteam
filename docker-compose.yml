@@ -63,7 +63,7 @@ services:
       - DB_NAME=vintagemarket
       - DB_USER=vintage_user
       - DB_PASSWORD=vintage_password
-      - DB_HOST=database
+      - DB_HOST=vintage-market-mysql
       - FRONTEND_URL=http://localhost:5173
       - JWT_SECRET=your-super-secret-jwt-key-here
       - SESSION_SECRET=your-super-secret-session-key-here
@@ -146,6 +146,8 @@ services:
     networks:
       - dev_net
       - internal_net
+    profiles:
+      - production  # production 프로필에서만 실행
 
   gitea:
     image: gitea/gitea:latest
@@ -162,6 +164,8 @@ services:
     networks:
       - internal_net
       - dev_net
+    profiles:
+      - production  # production 프로필에서만 실행
 
 # 3. 볼륨 정의
 volumes:

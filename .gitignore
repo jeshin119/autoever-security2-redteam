@@ -52,6 +52,9 @@ Thumbs.db
 # Docker
 .dockerignore
 
+# Jenkins data directory
+jenkins_home/
+
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov

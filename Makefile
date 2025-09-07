@@ -6,6 +6,18 @@
 help: ## Show this help message
 	@echo "Vintage Market - Development Commands"
 	@echo "====================================="
+	@echo ""
+	@echo "🚀 Quick Start:"
+	@echo "  make dev-with-data  - Start dev environment with sample data"
+	@echo "  make dev            - Start dev environment (no sample data)"
+	@echo "  make prod           - Start production environment"
+	@echo ""
+	@echo "📊 Database:"
+	@echo "  make db-seed        - Add sample data to existing database"
+	@echo "  make db-reset       - Reset database and add sample data"
+	@echo ""
+	@echo "All Commands:"
+	@echo "============="
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 # Setup
@@ -33,11 +45,23 @@ build: ## Build for production
 	@npm run build
 
 # Database
-db-seed: ## Seed database with test data
-	@npm run db:seed
+db-seed: ## Seed database with test data (Docker)
+	@echo "🌱 Seeding database with test data..."
+	@docker exec -i vintage-market-mysql mysql -u root -proot_password vintagemarket < database/seed_data_clean.sql
+	@echo "✅ Database seeded successfully!"
 
-db-reset: ## Reset and reseed database
-	@npm run db:reset
+db-reset: ## Reset and reseed database (Docker)
+	@echo "🔄 Resetting database..."
+	@docker-compose down database
+	@docker volume rm mitre-project_mysql_data 2>/dev/null || true
+	@docker-compose up -d database
+	@echo "⏳ Waiting for database to be healthy..."
+	@until [ "$$(docker inspect -f '{{.State.Health.Status}}' vintage-market-mysql)" = "healthy" ]; do \
+		sleep 2; \
+		echo "  Still waiting for database..."; \
+	done
+	@echo "✅ Database is ready!"
+	@make db-seed
 
 # Maintenance
 clean: ## Clean all runtime files (logs, uploads, db)
@@ -58,7 +82,7 @@ test: ## Run tests in all workspaces
 	@npm test
 
 # Docker
-dev: ## Start development environment with Docker (localhost URLs)
+dev: ## Start development environment with Docker (localhost URLs, no Jenkins/Gitea)
 	@echo "🛠️ Starting development environment with localhost URLs..."
 	@cp .env.dev .env
 	@echo "🔄 Starting database..."
@@ -85,21 +109,32 @@ dev: ## Start development environment with Docker (localhost URLs)
 	@echo "Frontend: http://localhost:5173"
 	@echo "Backend: http://localhost:3001"
 	@echo "phpMyAdmin: http://localhost:8081"
+	@echo "Note: Jenkins and Gitea are excluded in development mode"
+	@echo ""
+	@echo "💡 To add sample data, run: make db-seed"
 
-prod: ## Start production environment with Docker (192.168.201.102 URLs)
+dev-with-data: ## Start development environment with sample data
+	@make dev
+	@echo "🌱 Adding sample data..."
+	@make db-seed
+
+prod: ## Start production environment with Docker (192.168.201.102 URLs, includes Jenkins/Gitea)
 	@echo "🚀 Starting production environment with 192.168.201.102 URLs..."
 	@cp .env.prod .env
-	@docker-compose up --build -d frontend backend database phpmyadmin
+	@echo "🔄 Starting all services including Jenkins and Gitea..."
+	@docker-compose --profile production up --build -d
 	@echo "✅ Production environment started!"
 	@echo "Frontend: http://192.168.201.102:5173"
 	@echo "Backend: http://192.168.201.102:3001"
 	@echo "phpMyAdmin: http://192.168.201.102:8081"
+	@echo "Jenkins: http://192.168.201.102:8080"
+	@echo "Gitea: http://192.168.201.102:3002"
 
-docker-dev: ## Start development environment with Docker (legacy)
+docker-dev: ## Start development environment with Docker (legacy, no Jenkins/Gitea)
 	@docker-compose up --build
 
-docker-prod: ## Start production environment with Docker (legacy)
-	@docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+docker-prod: ## Start production environment with Docker (legacy, includes Jenkins/Gitea)
+	@docker-compose --profile production -f docker-compose.yml -f docker-compose.prod.yml up --build -d
 
 docker-down: ## Stop Docker containers
 	@docker-compose down
