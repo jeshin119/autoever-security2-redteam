@@ -121,6 +121,28 @@ const SearchButton = styled.button`
   }
 `;
 
+const ApplyFiltersButton = styled.button`
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: ${props => props.theme.colors.primary};
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+  margin-top: 1rem;
+
+  &:hover {
+    background: ${props => props.theme.colors.primaryDark};
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+`;
+
 const FilterGroup = styled.div`
   margin-bottom: 1.5rem;
 `;
@@ -409,10 +431,10 @@ const ProductListPage = () => {
     });
   }, [location.search]); // location.search 변경 시 실행
 
-  // 검색어 제외한 필터 상태 변경 시 상품 목록 가져오기
-  useEffect(() => {
-    fetchProducts();
-  }, [filters.category, filters.condition, filters.location]); // search 제외한 필터만 감지
+  // 자동 검색 제거 - 필터 적용 버튼으로 수동 검색
+  // useEffect(() => {
+  //   fetchProducts();
+  // }, [filters.category, filters.condition, filters.location]); // search 제외한 필터만 감지
 
   const fetchProducts = async () => {
     try {
@@ -436,17 +458,7 @@ const ProductListPage = () => {
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-
-    // 검색어가 아닌 필터 변경 시에만 즉시 URL 업데이트
-    if (key !== 'search') {
-      const newParams = new URLSearchParams();
-      Object.entries(newFilters).forEach(([k, v]) => {
-        if (v && v !== 'All Categories' && v !== '전체') {
-          newParams.set(k, v);
-        }
-      });
-      history.push(`?${newParams.toString()}`);
-    }
+    // 자동 URL 업데이트 제거 - 필터 적용 버튼으로 수동 처리
   };
 
   // Enter 키 이벤트 처리
@@ -474,6 +486,11 @@ const ProductListPage = () => {
 
     // 검색 실행
     fetchProducts();
+  };
+
+  // 필터 적용 함수 (검색어 + 모든 필터)
+  const handleApplyFilters = () => {
+    handleSearch();
   };
 
   const formatPrice = (price) => {
@@ -570,13 +587,12 @@ const ProductListPage = () => {
                 placeholder="지역을 입력하세요"
                 value={filters.location}
                 onChange={(e) => handleFilterChange('location', e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
-                  }
-                }}
               />
             </FilterGroup>
+
+            <ApplyFiltersButton onClick={handleApplyFilters}>
+              필터 적용
+            </ApplyFiltersButton>
           </FilterSection>
         </Sidebar>
 
