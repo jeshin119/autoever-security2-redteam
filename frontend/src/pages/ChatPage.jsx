@@ -479,8 +479,12 @@ const ChatPage = () => {
       newSocket.on('message', (data) => {
         console.log('Received real-time message:', data);
         setMessages(prev => {
+          // Convert to string for consistent comparison
+          const currentUserId = user ? String(user.id) : null;
+          const senderId = String(data.sender_id);
+          
           // Skip messages sent by current user (we already have optimistic update)
-          if (data.sender_id === (user && user.id)) {
+          if (currentUserId && senderId === currentUserId) {
             console.log('Skipping own message from Socket.IO:', data.id);
             return prev;
           }
@@ -495,9 +499,9 @@ const ChatPage = () => {
           const newMessage = {
             id: data.id,
             text: data.message,
-            isOwn: data.sender_id === (user && user.id),
+            isOwn: currentUserId && senderId === currentUserId,
             timestamp: data.createdAt,
-            sender: data.sender_id === (user && user.id) ? user.name : '상대방'
+            sender: currentUserId && senderId === currentUserId ? user.name : '상대방'
           };
           
           console.log('Adding new message to UI:', newMessage);
