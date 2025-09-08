@@ -684,10 +684,10 @@ const ChatPage = () => {
     
     // Join the room via Socket.IO (only if connected)
     if (socket && isSocketConnected && user && user.id) {
-      console.log('Joining room:', room.productId, 'as user:', user.id);
+      console.log('Joining room:', room.id, 'as user:', user.id);
       socket.emit('joinRoom', { 
         userId: user.id, 
-        productId: room.productId 
+        roomId: room.id 
       });
       
       // Add current user to online users for this room
@@ -798,7 +798,7 @@ const ChatPage = () => {
           message: messageText,
           senderId: user && user.id,
           receiverId: selectedRoom && selectedRoom.partnerId,
-          productId: selectedRoom.productId
+          roomId: selectedRoom.id
         });
       }
       

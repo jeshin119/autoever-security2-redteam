@@ -132,7 +132,7 @@ io.on('connection', (socket) => {
   console.log('Socket.IO: Engine.IO version:', socket.conn.protocol);
 
   socket.on('joinRoom', (data) => {
-    const roomId = data.productId; // Assuming productId is the roomId
+    const roomId = data.roomId; // Use actual chat room ID
     const userId = data.userId;
     
     console.log(`[Socket.IO] joinRoom received:`, { roomId, userId, socketId: socket.id });
@@ -179,17 +179,17 @@ io.on('connection', (socket) => {
     try {
       const receiverId = data.receiverId || null;
       if (!receiverId) {
-        console.warn(`[Socket.IO] Missing receiverId in sendMessage payload for room ${data.productId}`);
+        console.warn(`[Socket.IO] Missing receiverId in sendMessage payload for room ${data.roomId}`);
       }
       
       const message = await ChatMessage.create({
         sender_id: data.senderId,
         receiver_id: receiverId,
-        product_id: data.productId,
+        room_id: data.roomId,
         message: data.message,
       });
-      console.log(`[Socket.IO] Emitting message to room ${data.productId}:`, message);
-      io.to(data.productId).emit('message', message);
+      console.log(`[Socket.IO] Emitting message to room ${data.roomId}:`, message);
+      io.to(data.roomId).emit('message', message);
     } catch (error) {
       console.error('[Socket.IO] Error saving message:', error);
     }
