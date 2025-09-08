@@ -501,12 +501,7 @@ const ChatPage = () => {
           // Convert to string for consistent comparison
           const currentUserId = user ? String(user.id) : null;
           const senderId = String(data.sender_id);
-          
-          // Skip messages sent by current user (we already have optimistic update)
-          if (currentUserId && senderId === currentUserId) {
-            console.log('Skipping own message from Socket.IO:', data.id);
-            return prev;
-          }
+          const isOwnMessage = currentUserId && senderId === currentUserId;
           
           // Check if message already exists (avoid duplicates)
           const exists = prev.some(msg => msg.id === data.id);
@@ -515,12 +510,37 @@ const ChatPage = () => {
             return prev;
           }
           
+          // For own messages, replace optimistic message if it exists
+          if (isOwnMessage) {
+            console.log('Replacing optimistic message with real message:', data.id);
+            const hasOptimisticMessage = prev.some(msg => typeof msg.id === 'number' && msg.isOwn);
+            
+            if (hasOptimisticMessage) {
+              // Replace the most recent optimistic message
+              const updatedMessages = [...prev];
+              for (let i = updatedMessages.length - 1; i >= 0; i--) {
+                if (typeof updatedMessages[i].id === 'number' && updatedMessages[i].isOwn) {
+                  updatedMessages[i] = {
+                    id: data.id,
+                    text: data.message,
+                    isOwn: true,
+                    timestamp: data.createdAt,
+                    sender: user.name
+                  };
+                  break;
+                }
+              }
+              return updatedMessages;
+            }
+          }
+          
+          // Add new message (for other users' messages)
           const newMessage = {
             id: data.id,
             text: data.message,
-            isOwn: currentUserId && senderId === currentUserId,
+            isOwn: isOwnMessage,
             timestamp: data.createdAt,
-            sender: currentUserId && senderId === currentUserId ? user.name : '상대방'
+            sender: isOwnMessage ? user.name : '상대방'
           };
           
           console.log('Adding new message to UI:', newMessage);
@@ -827,33 +847,40 @@ const ChatPage = () => {
           message: messageText,
           senderId: user && user.id,
           receiverId: selectedRoom && selectedRoom.partnerId,
-          roomId: selectedRoom.id
+          roomId: selectedRoom.id,
+          tempId: tempId // 임시 ID 추가해서 나중에 실제 ID로 교체
         };
         console.log('Emitting sendMessage with data:', messageData);
         socket.emit('sendMessage', messageData);
         console.log('sendMessage event emitted successfully');
       } else {
         console.log('Cannot send via Socket.IO - socket not connected or not available');
-      }
-      
-      // Also send to API for persistence
-      const response = await chatService.sendMessage(selectedRoom.id, {
-        message: messageText
-      });
+        
+        // Socket.IO 연결이 안 된 경우에만 REST API 사용 (fallback)
+        try {
+          const response = await chatService.sendMessage(selectedRoom.id, {
+            message: messageText
+          });
 
-      if (response.data && response.data.success) {
-        // Replace optimistic message with real one
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === tempId 
-              ? {
-                  ...msg,
-                  id: response.data.data.id,
-                  timestamp: response.data.data.createdAt || response.data.data.timestamp
-                }
-              : msg
-          )
-        );
+          if (response.data && response.data.success) {
+            // Replace optimistic message with real one
+            setMessages(prev => 
+              prev.map(msg => 
+                msg.id === tempId 
+                  ? {
+                      ...msg,
+                      id: response.data.data.id,
+                      timestamp: response.data.data.createdAt || response.data.data.timestamp
+                    }
+                  : msg
+              )
+            );
+          }
+        } catch (error) {
+          console.error('Failed to send message via API:', error);
+          // Remove failed message from UI
+          setMessages(prev => prev.filter(msg => msg.id !== tempId));
+        }
       }
     } catch (error) {
       console.error('Failed to send message:', error);
