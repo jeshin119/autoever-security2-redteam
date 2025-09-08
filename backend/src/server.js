@@ -109,7 +109,12 @@ const io = socketio(httpServer, {
     origin: [
       process.env.FRONTEND_URL || 'http://localhost:5173',
       'http://localhost:5173',
-      'http://127.0.0.1:5173'
+      'http://127.0.0.1:5173',
+      'http://frontend:5173', // Docker 컨테이너 이름
+      'http://vintage-market-frontend:5173', // Docker 컨테이너 이름
+      'http://172.20.0.2:5173', // Docker 네트워크 IP
+      'http://172.20.0.3:5173', // Docker 네트워크 IP
+      'http://172.20.0.4:5173'  // Docker 네트워크 IP
     ],
     methods: ['GET', 'POST'],
     credentials: true,
@@ -119,7 +124,10 @@ const io = socketio(httpServer, {
   allowEIO3: true, // Engine.IO v3 호환성
   pingTimeout: 60000,
   pingInterval: 25000,
-  upgradeTimeout: 10000
+  upgradeTimeout: 10000,
+  // Docker 환경을 위한 추가 설정
+  allowEIO3: true,
+  serveClient: false
 });
 
 // Track user room participation
@@ -127,9 +135,12 @@ const userRooms = new Map(); // userId -> Set of roomIds
 const socketUsers = new Map(); // socketId -> userId
 
 io.on('connection', (socket) => {
+  console.log('=== NEW SOCKET CONNECTION ===');
   console.log('Socket.IO: User connected:', socket.id);
   console.log('Socket.IO: Transport:', socket.conn.transport.name);
   console.log('Socket.IO: Engine.IO version:', socket.conn.protocol);
+  console.log('Socket.IO: Remote address:', socket.handshake.address);
+  console.log('Socket.IO: Headers:', socket.handshake.headers);
 
   socket.on('joinRoom', (data) => {
     const roomId = data.roomId; // Use actual chat room ID

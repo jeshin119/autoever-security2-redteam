@@ -399,7 +399,14 @@ const ChatPage = () => {
   // Initialize Socket.IO connection
   useEffect(() => {
     if (user && user.id) {
-      const newSocket = io('http://localhost:3001', {
+      // Docker 환경을 고려한 Socket.IO 연결 URL
+      const socketUrl = import.meta.env.VITE_API_URL || 
+                       import.meta.env.REACT_APP_API_URL || 
+                       'http://localhost:3001';
+      
+      console.log('Connecting to Socket.IO server:', socketUrl);
+      
+      const newSocket = io(socketUrl, {
         transports: ['polling', 'websocket'], // polling을 먼저 시도
         timeout: 20000,
         forceNew: true,
@@ -797,6 +804,8 @@ const ChatPage = () => {
       console.log('=== SENDING MESSAGE DEBUG ===');
       console.log('Socket exists:', !!socket);
       console.log('Socket connected:', isSocketConnected);
+      console.log('Socket ID:', socket && socket.id);
+      console.log('Socket transport:', socket && socket.io && socket.io.engine && socket.io.engine.transport && socket.io.engine.transport.name);
       console.log('User ID:', user && user.id);
       console.log('Selected room:', selectedRoom);
       console.log('Room ID:', selectedRoom && selectedRoom.id);
