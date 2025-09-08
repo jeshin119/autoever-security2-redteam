@@ -12,6 +12,8 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building Docker Image...'
+                // Load production environment variables
+                sh 'cp .env.prod .env'
                 // 현재 디렉토리 확인
                 // sh 'pwd'
                 // sh 'ls -la'
@@ -27,10 +29,10 @@ pipeline {
                 // docker-compose.yml 파일 확인
                 // sh 'test -f docker-compose.yml && echo "docker-compose.yml exists" || echo "docker-compose.yml NOT FOUND"'
                 
-                // 개발 모드로 빌드
-                sh 'docker compose build database'
-                sh 'docker compose build backend'
-                sh 'docker compose build frontend'
+                // Production 모드로 빌드
+                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml build database'
+                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml build backend'
+                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend'
             }
         }
                 //  // 캐시를 무시하고 새로 빌드
@@ -39,11 +41,11 @@ pipeline {
                 //  sh 'docker compose build --no-cache --pull frontend'
         stage('Deploy') {
             steps {
-                echo 'Deploy stage: Pretending to deploy the application...'
-                sh 'docker compose down backend'
-                sh 'docker compose down frontend'
-                sh 'docker compose up backend -d'
-                sh 'docker compose up frontend -d'
+                echo 'Deploy stage: Deploying production application...'
+                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml down backend'
+                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml down frontend'
+                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml up backend -d'
+                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml up frontend -d'
                 //sh 'docker compose exec backend node src/scripts/seedData.js'
                 sh 'echo "Deployment complete."'
             }

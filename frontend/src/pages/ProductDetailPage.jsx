@@ -1093,7 +1093,7 @@ const ProductDetailPage = () => {
                 onClick={(e) => {
                   console.log('Related product clicked:', relatedProduct.id);
                   console.log('Navigating to:', `/products/${relatedProduct.id}`);
-                  history.push(`/products/${relatedProduct.id}`);
+                  window.location.href = `/products/${relatedProduct.id}`;
                 }}
               >
                 <RelatedProductImage

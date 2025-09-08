@@ -10,7 +10,31 @@ services:
     # Use production target for frontend
     build:
       target: production
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL}
+        - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+        - VITE_API_URL=${VITE_API_URL}
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
+      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+      - VITE_API_URL=${VITE_API_URL}
+    command: nginx -g 'daemon off;'
     
   backend:
     # Remove volume mounts for production
     volumes: []
+    environment:
+      - NODE_ENV=production
+      - PORT=${BACKEND_PORT:-3000}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - BACKEND_BASE_URL=${BACKEND_BASE_URL}
+      - UPLOAD_PATH=${UPLOAD_PATH:-./uploads}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-10485760}
+    command: npm start
