@@ -595,26 +595,8 @@ const CommunityPostDetailPage = () => {
   };
 
   const handleFileDownload = async (url, name) => {
-    try {
-      // Create full URL - remove /api from the path since uploads are served directly
-      const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-      const baseUrl = API_BASE_URL.replace('/api', ''); // Remove /api if present
-      const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
-      
-      // Add download parameter to trigger proper download headers from server
-      const downloadUrl = `${fullUrl}?download=true`;
-      
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = name;
-      link.target = '_blank';
-      link.setAttribute('rel', 'noopener noreferrer');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Download failed:', error);
-    }
+    downloadService.downloadFile(url, name)
+      .catch(err => console.error('파일 다운로드 실패:', err));
   };
 
   if (loading) {
