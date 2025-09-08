@@ -400,18 +400,25 @@ const ChatPage = () => {
   useEffect(() => {
     if (user && user.id) {
       // Docker 환경을 고려한 Socket.IO 연결 URL
-      // 임시로 여러 URL 시도
+      // Socket.IO는 /api 경로가 아닌 루트 경로에서 실행됨
+      let socketUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+      
+      // API URL에서 /api 제거
+      if (process.env.REACT_APP_API_URL) {
+        socketUrl = process.env.REACT_APP_API_URL.replace('/api', '');
+      }
+      
+      // 다른 호스트 컨테이너 URL 시도
       const possibleUrls = [
-        process.env.REACT_APP_API_URL,
-        process.env.REACT_APP_BACKEND_URL,
+        socketUrl,
+        'http://192.168.201.102:3001',
         'http://localhost:3001',
         'http://vintage-market-backend:3000',
         'http://backend:3000',
-        'http://172.20.0.3:3000',
-        'http://192.168.201.102:3001',
-      ].filter(Boolean);
+        'http://172.20.0.3:3000'
+      ];
       
-      const socketUrl = possibleUrls[0] || 'http://localhost:3001';
+      socketUrl = possibleUrls[0];
       console.log('Available URLs:', possibleUrls);
       
       console.log('Connecting to Socket.IO server:', socketUrl);
@@ -424,10 +431,14 @@ const ChatPage = () => {
         timeout: 20000,
         forceNew: true,
         reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
+        reconnectionAttempts: 10, // 재연결 시도 횟수 증가
+        reconnectionDelay: 2000, // 재연결 지연 시간 증가
+        reconnectionDelayMax: 5000,
         upgrade: true, // polling에서 websocket으로 업그레이드 허용
-        rememberUpgrade: false // 업그레이드 기억하지 않음
+        rememberUpgrade: false, // 업그레이드 기억하지 않음
+        // 다른 호스트 연결을 위한 추가 옵션
+        autoConnect: true,
+        randomizationFactor: 0.5
       });
       
       setSocket(newSocket);
