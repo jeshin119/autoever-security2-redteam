@@ -89,13 +89,13 @@ router.get('/', async (req, res) => {
     
     // Price range filtering (vulnerable to type confusion)
     if (minPrice) {
-      whereClause.price = { [Op.gte]: parseFloat(minPrice) };
+      whereClause.price = { [Op.gte]: parseInt(minPrice) };
     }
     if (maxPrice) {
       if (whereClause.price) {
-        whereClause.price[Op.lte] = parseFloat(maxPrice);
+        whereClause.price[Op.lte] = parseInt(maxPrice);
       } else {
-        whereClause.price = { [Op.lte]: parseFloat(maxPrice) };
+        whereClause.price = { [Op.lte]: parseInt(maxPrice) };
       }
     }
     
@@ -227,13 +227,13 @@ router.get('/search', async (req, res) => {
     
     // Price range filtering
     if (priceMin && priceMin !== '') {
-      whereClause.price = { [Op.gte]: parseFloat(priceMin) };
+      whereClause.price = { [Op.gte]: parseInt(priceMin) };
     }
     if (priceMax && priceMax !== '') {
       if (whereClause.price) {
-        whereClause.price[Op.lte] = parseFloat(priceMax);
+        whereClause.price[Op.lte] = parseInt(priceMax);
       } else {
-        whereClause.price = { [Op.lte]: parseFloat(priceMax) };
+        whereClause.price = { [Op.lte]: parseInt(priceMax) };
       }
     }
     
@@ -982,13 +982,13 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
     } = purchaseData;
 
     // Calculate expected total (서버에서 재검증)
-    const productPrice = parseFloat(product.price);
+    const productPrice = parseInt(product.price);
     const calculatedDeliveryFee = deliveryType === 'express' ? 5000 : 3000;
     const expectedTotal = productPrice + calculatedDeliveryFee - (discount || 0);
 
     // Check if user has enough credits (race condition vulnerability)
     const buyer = await User.findByPk(buyerId);
-    const userCredits = parseFloat(buyer.credits || 0);
+    const userCredits = parseInt(buyer.credits || 0);
 
     if (userCredits < expectedTotal) {
       return res.status(400).json({
@@ -1042,7 +1042,7 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
 
     // Transfer credits to seller (판매자는 상품가격만 받음, 배송비는 시스템 수수료)
     const seller = await User.findByPk(product.userId);
-    const currentSellerCredits = parseFloat(seller.credits || 0);
+    const currentSellerCredits = parseInt(seller.credits || 0);
     const newSellerCredits = currentSellerCredits + productPrice;
     
     await User.update(

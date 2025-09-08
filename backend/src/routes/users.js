@@ -358,8 +358,8 @@ router.post('/:id/charge-credits', async (req, res) => {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     // Race condition vulnerability: Read current credits without lock
-    const currentCredits = parseFloat(user.credits || 0);
-    const newCredits = currentCredits + parseFloat(amount);
+    const currentCredits = parseInt(user.credits || 0);
+    const newCredits = currentCredits + parseInt(amount);
 
     // Update credits without checking if value changed
     await User.update(

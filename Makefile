@@ -96,15 +96,9 @@ dev: ## Start development environment with Docker (localhost URLs, no Jenkins/Gi
 	@echo "🔄 Starting backend..."
 	@docker-compose up -d --build backend
 	@echo "⏳ Waiting for backend /api/health..."
-	@timeout=60; counter=0; \
-	until curl -fsS http://localhost:3001/api/health >/dev/null 2>&1; do \
+	@until curl -fsS http://localhost:3001/api/health >/dev/null 2>&1; do \
 		sleep 2; \
-		counter=$$((counter + 2)); \
-		echo "  Still waiting for backend... ($${counter}s/$${timeout}s)"; \
-		if [ $$counter -ge $$timeout ]; then \
-			echo "❌ Backend health check timeout after $${timeout}s"; \
-			exit 1; \
-		fi; \
+		echo "  Still waiting for backend..."; \
 	done
 	@echo "✅ Backend is ready!"
 	@echo "🔄 Starting frontend..."

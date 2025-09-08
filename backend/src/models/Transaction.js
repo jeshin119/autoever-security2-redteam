@@ -23,7 +23,7 @@ const Transaction = sequelize.define('Transaction', {
     // Intentionally no foreign key constraint
   },
   amount: {
-    type: DataTypes.DECIMAL(10, 2),
+    type: DataTypes.INTEGER,
     allowNull: false,
     // Intentionally no validation for negative amounts
   },
@@ -54,7 +54,7 @@ const Transaction = sequelize.define('Transaction', {
     // Intentionally no validation
   },
   refundAmount: {
-    type: DataTypes.DECIMAL(10, 2),
+    type: DataTypes.INTEGER,
     // Intentionally no validation
   },
   completedAt: {

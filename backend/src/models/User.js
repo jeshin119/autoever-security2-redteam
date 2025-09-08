@@ -70,8 +70,8 @@ const User = sequelize.define('User', {
     field: 'manner_score'
   },
   credits: {
-    type: DataTypes.DECIMAL(10, 2),
-    defaultValue: 0.00,
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
     allowNull: false,
     // Intentionally no validation for negative credits
   },

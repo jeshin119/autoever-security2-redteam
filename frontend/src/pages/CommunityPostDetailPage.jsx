@@ -661,7 +661,7 @@ const CommunityPostDetailPage = () => {
             {(post.author && post.author.name && post.author.name.charAt(0)) || 'U'}
           </AuthorAvatar>
           <AuthorInfo>
-            <AuthorName>{(post.author && post.author.name) || 'Unknown User'}</AuthorName>
+            <AuthorName>{(post.author && post.author.name)}</AuthorName>
             <PostDate>{formatDate(post.createdAt)}</PostDate>
           </AuthorInfo>
         </AuthorSection>
@@ -774,7 +774,7 @@ const CommunityPostDetailPage = () => {
                 <CommentHeader>
                   <CommentAuthor>
                     <FiUser />
-                    {(comment.author && comment.author.name) || 'Unknown User'}
+                    {(comment.author && comment.author.name)}
                   </CommentAuthor>
                   <CommentDate>{formatDate(comment.createdAt)}</CommentDate>
                 </CommentHeader>

@@ -21,11 +21,11 @@ const Coupon = sequelize.define('Coupon', {
     allowNull: false,
   },
   value: {
-    type: DataTypes.DECIMAL(10, 2),
+    type: DataTypes.INTEGER,
     allowNull: false,
   },
   minOrderAmount: {
-    type: DataTypes.DECIMAL(10, 2),
+    type: DataTypes.INTEGER,
     defaultValue: 0,
     field: 'min_order_amount'
   },
