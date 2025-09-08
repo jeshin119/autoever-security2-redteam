@@ -6,7 +6,8 @@ module.exports = {
   entry: './src/main.jsx',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: '[name].[contenthash].js', // 캐시 무효화를 위해 contenthash 사용
+    // entry chunk는 [hash]로, 나머지 splitChunks는 [contenthash] 사용 가능
+    filename: '[name].[hash].js',
     publicPath: '/'
   },
   resolve: {
@@ -52,14 +53,16 @@ module.exports = {
     })
   ],
   devServer: {
-    contentBase: path.join(__dirname, 'dist'),
+    static: {
+      directory: path.join(__dirname, 'dist')
+    },
     compress: true,
     port: 5173,
     host: '0.0.0.0',
     historyApiFallback: true,
-    hot: true, // HMR 활성화
+    hot: true,
     headers: {
-      'Cache-Control': 'no-store', // 브라우저 캐시 무시
+      'Cache-Control': 'no-store',
     },
     publicPath: '/',
     proxy: {
@@ -72,8 +75,10 @@ module.exports = {
   },
   optimization: {
     splitChunks: {
-      chunks: 'all', // React.lazy 동적 import를 별도 청크로 분리
+      chunks: 'all',
+      // split chunk는 contenthash 사용 가능
+      filename: '[name].[contenthash].js'
     },
-    runtimeChunk: 'single' // 런타임 청크를 하나로 관리
+    runtimeChunk: 'single'
   }
 };
