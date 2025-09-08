@@ -2,12 +2,16 @@ FROM ubuntu:18.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # 🔑 Use default Ubuntu repositories which support multi-architecture
-RUN apt-get update && apt-get install -y \
-    curl \
-    sudo \
-    python3 \
-    build-essential \
- && rm -rf /var/lib/apt/lists/*
+RUN for i in 1 2 3; do \
+        apt-get update && \
+        apt-get install -y --fix-missing \
+            curl \
+            sudo \
+            python3 \
+            build-essential && \
+        break || sleep 10; \
+    done && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m server && \
     echo "server:123456" | chpasswd && \
@@ -28,10 +32,26 @@ RUN bash -c "source $NVM_DIR/nvm.sh && \
     nvm alias default $NODE_VERSION && \
     nvm use default"
 
+# root로 다시 전환하여 권한 설정
+USER root
+# package.json과 package-lock.json을 먼저 복사
 COPY --chown=server:server package*.json ./
+
+# 디렉토리 권한 설정 (root 권한으로 실행)
+RUN chown -R server:server /home/server/app
+RUN chmod -R 755 /home/server/app
+
+# server 사용자로 npm install 실행
+USER server
 RUN npm install
-RUN npm install -g pm2
+
+# root로 다시 전환하여 파일 복사
+USER root
+# 나머지 소스 코드 복사 (.dockerignore에 의해 node_modules는 제외됨)
 COPY --chown=server:server . .
+
+# server 사용자로 다시 전환
+USER server
 RUN mkdir -p uploads logs
 RUN chmod -R 755 uploads logs
 

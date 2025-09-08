@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useHistory, Link } from 'react-router-dom';
 import styled from 'styled-components';
 import {
@@ -540,9 +540,82 @@ const ProductDetailPage = () => {
   const [showCreditModal, setShowCreditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    fetchProduct();
+    const fetchProductWithCleanup = async () => {
+      try {
+        if (!isMountedRef.current) return;
+        setLoading(true);
+        
+        const resp = await productService.getProduct(id);
+        if (!isMountedRef.current) return;
+        
+        // 백엔드가 {success, data} 래핑이거나 바로 객체일 수 있어 호환 처리
+        const raw = (resp && resp.data && resp.data.data) || (resp && resp.data) || {};
+
+        // images는 문자열(JSON)로 올 수 있으니 배열로 정규화
+        const images = toImagesArray(raw.images);
+
+        // 필드 명 혼재 보정
+        const condition =
+          (raw.condition !== undefined && raw.condition !== null) ? raw.condition : 
+          (raw.conditionStatus !== undefined && raw.conditionStatus !== null) ? raw.conditionStatus : 
+          (raw.condition_status !== undefined && raw.condition_status !== null) ? raw.condition_status : 'good';
+
+        const negotiable =
+          raw.negotiable === true ||
+          raw.negotiable === 'true' ||
+          raw.negotiable === 1 ||
+          raw.negotiable === '1';
+
+        const userId = (raw.userId !== undefined && raw.userId !== null) ? raw.userId : 
+                      (raw.sellerId !== undefined && raw.sellerId !== null) ? raw.sellerId : 
+                      (raw.seller_id !== undefined && raw.seller_id !== null) ? raw.seller_id : null;
+
+        // isSold 값을 그대로 사용
+        const isSold = raw.isSold || raw.is_sold || false;
+
+        const product = {
+          ...raw,
+          images,
+          condition,
+          negotiable,
+          userId,
+          isSold,
+          // 판매자 보조 정보
+          sellerName: (raw.seller && raw.seller.name) || raw.sellerName || '익명 사용자',
+          sellerRating:
+            (raw.seller && raw.seller.mannerScore) || raw.sellerRating || 36.5,
+          sellerPhone: raw.sellerPhone || (raw.seller && raw.seller.phone),
+          sellerEmail: raw.sellerEmail || (raw.seller && raw.seller.email),
+        };
+
+        if (isMountedRef.current) {
+          setProduct(product);
+          setCurrentImageIndex(0);
+        }
+      } catch (error) {
+        console.error('Failed to fetch product:', error);
+        if (isMountedRef.current) {
+          if (error.response && error.response.status === 404) {
+            setError('존재하지 않는 상품입니다.');
+          } else {
+            setError('상품을 불러오는데 실패했습니다.');
+          }
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchProductWithCleanup();
+    
+    return () => {
+      isMountedRef.current = false;
+    };
   }, [id]);
 
   // Check if user has liked this product
@@ -559,63 +632,6 @@ const ProductDetailPage = () => {
     }
   }, [product && product.category]);
 
-  const fetchProduct = async () => {
-    try {
-      setLoading(true);
-      const resp = await productService.getProduct(id);
-      // 백엔드가 {success, data} 래핑이거나 바로 객체일 수 있어 호환 처리
-      const raw = (resp && resp.data && resp.data.data) || (resp && resp.data) || {};
-
-      // images는 문자열(JSON)로 올 수 있으니 배열로 정규화
-      const images = toImagesArray(raw.images);
-
-      // 필드 명 혼재 보정
-      const condition =
-        (raw.condition !== undefined && raw.condition !== null) ? raw.condition : 
-        (raw.conditionStatus !== undefined && raw.conditionStatus !== null) ? raw.conditionStatus : 
-        (raw.condition_status !== undefined && raw.condition_status !== null) ? raw.condition_status : 'good';
-
-      const negotiable =
-        raw.negotiable === true ||
-        raw.negotiable === 'true' ||
-        raw.negotiable === 1 ||
-        raw.negotiable === '1';
-
-      const userId = (raw.userId !== undefined && raw.userId !== null) ? raw.userId : 
-                    (raw.sellerId !== undefined && raw.sellerId !== null) ? raw.sellerId : 
-                    (raw.seller_id !== undefined && raw.seller_id !== null) ? raw.seller_id : null;
-
-      // isSold 값을 그대로 사용
-      const isSold = raw.isSold || raw.is_sold || false;
-
-      const product = {
-        ...raw,
-        images,
-        condition,
-        negotiable,
-        userId,
-        isSold,
-        // 판매자 보조 정보
-        sellerName: (raw.seller && raw.seller.name) || raw.sellerName || '익명 사용자',
-        sellerRating:
-          (raw.seller && raw.seller.mannerScore) || raw.sellerRating || 36.5,
-        sellerPhone: raw.sellerPhone || (raw.seller && raw.seller.phone),
-        sellerEmail: raw.sellerEmail || (raw.seller && raw.seller.email),
-      };
-
-      setProduct(product);
-      setCurrentImageIndex(0);
-    } catch (error) {
-      console.error('Failed to fetch product:', error);
-      if (error.response && error.response.status === 404) {
-        setError('존재하지 않는 상품입니다.');
-      } else {
-        setError('상품을 불러오는데 실패했습니다.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchRelatedProducts = async () => {
     try {
@@ -669,10 +685,15 @@ const ProductDetailPage = () => {
     setShowPurchaseModal(true);
   };
 
-  const handlePurchaseConfirm = async () => {
+  const handlePurchaseConfirm = async (purchaseData) => {
+    if (!isMountedRef.current) return;
+    
     setPurchaseLoading(true);
+    
     try {
-      const response = await productService.purchaseProduct(id);
+      const response = await productService.purchaseProduct(id, purchaseData);
+      
+      if (!isMountedRef.current) return;
       
       // Check for successful response (either success=true or status 200)
       if (response.data && (response.data.success === true || response.status === 200)) {
@@ -694,6 +715,8 @@ const ProductDetailPage = () => {
       }
     } catch (error) {
       console.error('Purchase failed:', error);
+      if (!isMountedRef.current) return;
+      
       if (error.response && error.response.data && error.response.data.message) {
         const errorMessage = error.response.data.message;
         if (errorMessage.includes('크레딧이 부족합니다')) {
@@ -706,7 +729,9 @@ const ProductDetailPage = () => {
         alert('구매에 실패했습니다. 다시 시도해주세요.');
       }
     } finally {
-      setPurchaseLoading(false);
+      if (isMountedRef.current) {
+        setPurchaseLoading(false);
+      }
     }
   };
 
@@ -759,10 +784,10 @@ const ProductDetailPage = () => {
       const response = await productService.toggleLike(id);
       if (response.data && response.data.success) {
         setIsLiked(response.data.data.isLiked);
-        // Optimistically update likes count
+        // Update likes count with server response
         setProduct(prev => ({
           ...prev,
-          likes: response.data.data.isLiked ? (prev.likes || 0) + 1 : (prev.likes || 1) - 1
+          likes: response.data.data.likes
         }));
       }
     } catch (error) {

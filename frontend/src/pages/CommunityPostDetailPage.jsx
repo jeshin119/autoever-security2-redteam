@@ -535,6 +535,20 @@ const CommunityPostDetailPage = () => {
     }
   };
 
+  const handleShare = async () => {
+    try {
+      await navigator.share({
+        title: post.title,
+        text: post.content,
+        url: window.location.href
+      });
+    } catch (error) {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href);
+      alert('링크가 클립보드에 복사되었습니다.');
+    }
+  };
+
   const handlePostDelete = async () => {
     if (!user) return;
 
@@ -705,7 +719,7 @@ const CommunityPostDetailPage = () => {
             <FiMessageCircle />
             댓글 {post.comments_count || 0}
           </ActionButton>
-          <ActionButton>
+          <ActionButton onClick={handleShare}>
             <FiShare2 />
             공유
           </ActionButton>

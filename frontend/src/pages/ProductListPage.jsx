@@ -121,6 +121,28 @@ const SearchButton = styled.button`
   }
 `;
 
+const ApplyFiltersButton = styled.button`
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: ${props => props.theme.colors.primary};
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+  margin-top: 1rem;
+
+  &:hover {
+    background: ${props => props.theme.colors.primaryDark};
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+`;
+
 const FilterGroup = styled.div`
   margin-bottom: 1.5rem;
 `;
@@ -399,30 +421,33 @@ const ProductListPage = () => {
     const locationParam = urlParams.get('location') || '';
 
     // 필터 상태 업데이트
-    setFilters({
+    const newFilters = {
       search: search,
       category: category || 'All Categories',
       condition: condition,
       priceMin: '',
       priceMax: '',
       location: locationParam
-    });
+    };
+    
+    setFilters(newFilters);
+
+    // URL 파라미터가 있을 때 자동으로 필터 적용
+    if (category || search || condition || locationParam) {
+      fetchProducts(newFilters);
+    }
   }, [location.search]); // location.search 변경 시 실행
 
-  // 검색어 제외한 필터 상태 변경 시 상품 목록 가져오기
-  useEffect(() => {
-    fetchProducts();
-  }, [filters.category, filters.condition, filters.location]); // search 제외한 필터만 감지
-
-  const fetchProducts = async () => {
+  const fetchProducts = async (customFilters = null) => {
     try {
       setLoading(true);
-      const apiCondition = normalizeCondition(filters.condition);
+      const currentFilters = customFilters || filters;
+      const apiCondition = normalizeCondition(currentFilters.condition);
       const response = await productService.getProducts({
-        search: filters.search,
-        category: filters.category !== 'All Categories' ? filters.category : '',
+        search: currentFilters.search,
+        category: currentFilters.category !== 'All Categories' ? currentFilters.category : '',
         condition: apiCondition,
-        location: filters.location
+        location: currentFilters.location
       });
       setProducts((response.data && response.data.data) || []);
     } catch (error) {
@@ -436,17 +461,7 @@ const ProductListPage = () => {
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
-
-    // 검색어가 아닌 필터 변경 시에만 즉시 URL 업데이트
-    if (key !== 'search') {
-      const newParams = new URLSearchParams();
-      Object.entries(newFilters).forEach(([k, v]) => {
-        if (v && v !== 'All Categories' && v !== '전체') {
-          newParams.set(k, v);
-        }
-      });
-      history.push(`?${newParams.toString()}`);
-    }
+    // 자동 URL 업데이트 제거 - 필터 적용 버튼으로 수동 처리
   };
 
   // Enter 키 이벤트 처리
@@ -474,6 +489,11 @@ const ProductListPage = () => {
 
     // 검색 실행
     fetchProducts();
+  };
+
+  // 필터 적용 함수 (검색어 + 모든 필터)
+  const handleApplyFilters = () => {
+    handleSearch();
   };
 
   const formatPrice = (price) => {
@@ -570,13 +590,12 @@ const ProductListPage = () => {
                 placeholder="지역을 입력하세요"
                 value={filters.location}
                 onChange={(e) => handleFilterChange('location', e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleSearch();
-                  }
-                }}
               />
             </FilterGroup>
+
+            <ApplyFiltersButton onClick={handleApplyFilters}>
+              필터 적용
+            </ApplyFiltersButton>
           </FilterSection>
         </Sidebar>
 

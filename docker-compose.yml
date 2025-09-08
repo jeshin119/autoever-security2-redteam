@@ -41,9 +41,9 @@ services:
       - VITE_API_URL=${VITE_API_URL}
       - REACT_APP_API_URL=${REACT_APP_API_URL}
       - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL:-http://localhost:3001}
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+    # volumes:
+      # - ./frontend:/app
+      # - /app/node_modules
     depends_on:
       - backend
     networks:
@@ -63,13 +63,13 @@ services:
       - DB_NAME=vintagemarket
       - DB_USER=vintage_user
       - DB_PASSWORD=vintage_password
-      - DB_HOST=database
+      - DB_HOST=vintage-market-mysql
       - FRONTEND_URL=http://localhost:5173
       - JWT_SECRET=your-super-secret-jwt-key-here
       - SESSION_SECRET=your-super-secret-session-key-here
       - BACKEND_BASE_URL=http://localhost:3001
     volumes:
-      - ./backend:/home/server/app
+      - ./backend:/app
       - /home/server/app/node_modules
     depends_on:
       database:
@@ -80,19 +80,17 @@ services:
 
   # --- 내부망(Internal) 영역 ---
   database:
-    image: mysql:8.0
+    build:
+      context: .
+      dockerfile: database/Dockerfile
     container_name: vintage-market-mysql
     hostname: database
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root_password
       MYSQL_DATABASE: vintagemarket
-      MYSQL_USER: vintage_user
-      MYSQL_PASSWORD: vintage_password
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
       interval: 5s
@@ -133,37 +131,22 @@ services:
   # --- 개발망(Dev) 영역 ---
   jenkins:
     build: ./jenkins
-    container_name: jenkins-server
-    user: root  # <-- 권한 문제 해결
-    hostname: jenkins-server
+    container_name: jenkins
+    hostname: jenkins
     ports:
-      # Jenkins 포트는 충돌이 없으므로 그대로 8080 사용
       - "8080:8080"
       - "50000:50000"
     volumes:
+      - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./jenkins_home:/var/jenkins_home # <-- Jenkins Job 데이터 영구 저장을 위해 이 라인 추가
-    networks:
-      - dev_net
-      - internal_net
-
-  gitea:
-    image: gitea/gitea:latest
-    container_name: gitea-server
-    hostname: gitea-server
     environment:
-      - USER_UID=1000
-      - USER_GID=1000
-    ports:
-      # [수정] 충돌을 피하기 위해 호스트 포트를 3000 -> 3002로 변경
-      - "3002:3000"
-    volumes:
-      - gitea_data:/data
+      - DOCKER_HOST=unix:///var/run/docker.sock
     networks:
-      - internal_net
       - dev_net
 
 # 3. 볼륨 정의
 volumes:
   mysql_data:
-  gitea_data:
+    driver: local
+  jenkins_home:
+    driver: local

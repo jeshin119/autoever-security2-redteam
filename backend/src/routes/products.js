@@ -653,7 +653,7 @@ router.get('/search/:query', async (req, res) => {
 
 
 
-// Like product (vulnerable to manipulation)
+// Toggle product like (like community posts)
 router.post('/:id/like', async (req, res) => {
   try {
     const { id } = req.params;
@@ -696,33 +696,41 @@ router.post('/:id/like', async (req, res) => {
       where: { userId, productId: id }
     });
     
+    let isLiked;
+    let newLikesCount;
+    
     if (existingLike) {
-      return res.status(400).json({
-        success: false,
-        message: '이미 찜한 상품입니다.'
+      // 이미 좋아요를 누른 상태 -> 좋아요 취소
+      await existingLike.destroy();
+      newLikesCount = Math.max(0, (product.likes || 0) - 1);
+      isLiked = false;
+    } else {
+      // 좋아요를 누르지 않은 상태 -> 좋아요 추가
+      await UserLikes.create({
+        userId,
+        productId: id
       });
+      newLikesCount = (product.likes || 0) + 1;
+      isLiked = true;
     }
     
-    // Add like to user_likes table
-    await UserLikes.create({
-      userId,
-      productId: id
-    });
-    
-    // Increment product likes count
-    product.likes += 1;
+    // Update product likes count
+    product.likes = newLikesCount;
     await product.save();
     
     res.json({
       success: true,
-      message: '상품을 찜했습니다.',
-      data: { likes: product.likes }
+      message: isLiked ? '상품을 찜했습니다.' : '찜을 취소했습니다.',
+      data: { 
+        likes: newLikesCount,
+        isLiked: isLiked
+      }
     });
     
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error liking product',
+      message: 'Error toggling product like',
       error: error.message,
       stack: error.stack
     });
@@ -962,19 +970,7 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
       });
     }
 
-    // Check if user has enough credits (race condition vulnerability)
-    const buyer = await User.findByPk(buyerId);
-    const productPrice = parseFloat(product.price);
-    const userCredits = parseFloat(buyer.credits || 0);
-
-    if (userCredits < productPrice) {
-      return res.status(400).json({
-        success: false,
-        message: `크레딧이 부족합니다. 필요: ${productPrice}원, 보유: ${userCredits}원`
-      });
-    }
-
-    // Process extended purchase data
+    // Process extended purchase data first
     const purchaseData = req.body;
     const {
       deliveryInfo = {},
@@ -984,6 +980,22 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
       deliveryFee = 3000,
       discount = 0
     } = purchaseData;
+
+    // Calculate expected total (서버에서 재검증)
+    const productPrice = parseFloat(product.price);
+    const calculatedDeliveryFee = deliveryType === 'express' ? 5000 : 3000;
+    const expectedTotal = productPrice + calculatedDeliveryFee - (discount || 0);
+
+    // Check if user has enough credits (race condition vulnerability)
+    const buyer = await User.findByPk(buyerId);
+    const userCredits = parseFloat(buyer.credits || 0);
+
+    if (userCredits < expectedTotal) {
+      return res.status(400).json({
+        success: false,
+        message: `크레딧이 부족합니다. 필요: ${expectedTotal}원, 보유: ${userCredits}원`
+      });
+    }
 
     // Validate delivery information
     if (deliveryInfo.recipientName && deliveryInfo.recipientName.length > 100) {
@@ -1000,10 +1012,16 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
       });
     }
 
-    // Calculate expected total (서버에서 재검증)
-    const calculatedDeliveryFee = deliveryType === 'express' ? 5000 : 3000;
-    const expectedTotal = productPrice + calculatedDeliveryFee - (discount || 0);
-    
+    // 의도적 ReDoS 취약점 예시 (교육용 - 실제 서비스에서는 절대 사용 금지)
+    // 공격 예시: "010-1111111111111111111111111111111111111111!"
+    // 이런 코드는 정적 분석 도구나 코드 리뷰에서 반드시 발견해야 함
+    if (deliveryInfo.phone && !/^(01[0-9])?-?(\d+)*-?(\d+)*$/.test(deliveryInfo.phone)) {
+      return res.status(400).json({
+        success: false,
+        message: '전화번호 형식이 잘못되었습니다.'
+      });
+    }
+
     console.log('Purchase data validation:', {
       productPrice,
       calculatedDeliveryFee,
@@ -1014,14 +1032,6 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
 
     console.log(`Processing purchase for product ${productId} by user ${buyerId}...`);
     console.log(`User credits: ${userCredits}원, Total amount: ${expectedTotal}원`);
-
-    // Check if user has enough credits for total amount (including delivery fee)
-    if (userCredits < expectedTotal) {
-      return res.status(400).json({
-        success: false,
-        message: `크레딧이 부족합니다. 필요: ${expectedTotal}원, 보유: ${userCredits}원`
-      });
-    }
 
     // Race condition vulnerability: Deduct credits without lock (총 금액으로)
     const newBuyerCredits = userCredits - expectedTotal;
@@ -1078,21 +1088,37 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
 
     // Create transaction record (also vulnerable to race condition)
     const Transaction = require('../models/Transaction');
-    const transaction = await Transaction.create({
-      productId: productId,
-      sellerId: product.userId,
-      buyerId: buyerId,
-      amount: expectedTotal,
+    // 구매 상세 정보를 JSON으로 저장 (구매자/판매자 정보 포함)
+    const purchaseDetails = {
       productPrice: productPrice,
       deliveryFee: calculatedDeliveryFee,
       discount: discount,
       deliveryType: deliveryType,
-      deliveryInfo: JSON.stringify(deliveryInfo),
-      appliedCoupon: appliedCoupon ? JSON.stringify(appliedCoupon) : null,
+      deliveryInfo: deliveryInfo,
+      appliedCoupon: appliedCoupon,
+      buyerInfo: {
+        id: buyer.id,
+        name: buyer.name,
+        email: buyer.email
+      },
+      sellerInfo: {
+        id: seller.id,
+        name: seller.name,
+        email: seller.email
+      }
+    };
+
+    const transaction = await Transaction.create({
+      product_id: productId,
+      seller_id: product.userId,
+      buyer_id: buyerId,
+      amount: expectedTotal,
+      paymentData: JSON.stringify(purchaseDetails),
       status: 'completed'
     });
 
     console.log(`Purchase completed for product ${productId} by user ${buyerId}`);
+    console.log('Transaction created successfully with ID:', transaction.id);
 
     res.status(200).json({
       success: true,
@@ -1113,7 +1139,9 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Purchase error:', error);
+    console.error('Purchase error occurred at stage:', error.message);
+    console.error('Full error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: '구매 처리 중 오류가 발생했습니다.',

@@ -3,26 +3,40 @@ pipeline {
 
     environment {
         COMPOSE_PROJECT_NAME = 'mitre-project'
+        DOCKER_BUILDKIT = '0'  // Docker BuildKit 비활성화
+        BUILDKIT_PROGRESS = 'plain'
     }
 
     stages {
-        // 이 디버깅 단계를 추가했습니다.
-        stage('Debug Workspace') {
-            steps {
-                echo 'Listing all files in the workspace...'
-                // 작업 공간의 모든 파일 목록을 자세히 출력합니다.
-                // 이 결과를 보면 package.json 파일의 존재 여부와 위치를 알 수 있습니다.
-                sh 'ls -al'
-            }
-        }
 
         stage('Build') {
             steps {
                 echo 'Building Docker Image...'
-                sh 'docker compose build backend frontend database'
+                // 현재 디렉토리 확인
+                // sh 'pwd'
+                // sh 'ls -la'
                 
+                // package.json 파일 존재 확인
+                // sh 'test -f frontend/package.json && echo "Frontend package.json exists" || echo "Frontend package.json NOT FOUND"'
+                // sh 'test -f backend/package.json && echo "Backend package.json exists" || echo "Backend package.json NOT FOUND"'
+                
+                // .dockerignore 파일 확인
+                // sh 'test -f frontend/.dockerignore && echo "Frontend .dockerignore exists" || echo "Frontend .dockerignore NOT FOUND"'
+                // sh 'test -f backend/.dockerignore && echo "Backend .dockerignore exists" || echo "Backend .dockerignore NOT FOUND"'
+                
+                // docker-compose.yml 파일 확인
+                // sh 'test -f docker-compose.yml && echo "docker-compose.yml exists" || echo "docker-compose.yml NOT FOUND"'
+                
+                // 개발 모드로 빌드
+                sh 'docker compose build database'
+                sh 'docker compose build backend'
+                sh 'docker compose build frontend'
             }
         }
+                //  // 캐시를 무시하고 새로 빌드
+                //  sh 'docker compose build --no-cache --pull database'
+                //  sh 'docker compose build --no-cache --pull backend'
+                //  sh 'docker compose build --no-cache --pull frontend'
         stage('Deploy') {
             steps {
                 echo 'Deploy stage: Pretending to deploy the application...'

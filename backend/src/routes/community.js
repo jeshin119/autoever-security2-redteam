@@ -83,13 +83,16 @@ router.get('/posts/:id', async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Community post not found' });
     }
 
+    // 조회수 증가
+    await post.increment('views');
+
     // 댓글을 별도로 조회
     const comments = await Comment.findAll({
       where: { post_id: req.params.id },
       include: [
         {
           model: User,
-          as: 'commentAuthor',
+          as: 'author',
           attributes: ['id', 'name', 'email']
         }
       ],
@@ -399,13 +402,13 @@ router.post('/posts/:id/comments', authenticateToken, async (req, res, next) => 
     const commentWithAuthor = await Comment.findByPk(comment.id, {
       include: [{
         model: User,
-        as: 'commentAuthor',
+        as: 'author',
         attributes: ['id', 'name', 'email']
       }]
     });
 
     console.log('Comment with author:', commentWithAuthor.toJSON());
-    console.log('Author info:', commentWithAuthor.commentAuthor);
+    console.log('Author info:', commentWithAuthor.author);
 
     // Ensure the response has the correct structure
     const responseData = {
@@ -416,7 +419,7 @@ router.post('/posts/:id/comments', authenticateToken, async (req, res, next) => 
       parent_id: commentWithAuthor.parent_id,
       createdAt: commentWithAuthor.createdAt,
       updatedAt: commentWithAuthor.updatedAt,
-      author: commentWithAuthor.commentAuthor
+      author: commentWithAuthor.author
     };
 
     console.log('Final response data:', responseData);

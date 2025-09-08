@@ -10,8 +10,17 @@
 ```bash
 git clone <repository>
 cd vintage-market
-make setup  # or npm run setup
-make dev    # or npm run dev
+make setup           # Initial setup
+make dev-with-data   # Start development with sample data
+```
+
+### Alternative Setup Options
+```bash
+# Development without sample data
+make dev
+
+# Production environment (includes Jenkins/Gitea)
+make prod
 ```
 
 Access the application:
@@ -20,16 +29,37 @@ Access the application:
 - 📊 **Health Check**: http://localhost:3001/api/health
 - 🗄️ **phpMyAdmin**: http://localhost:8081
 
+### 🎯 Recommended Workflow
+1. **First time setup**: `make dev-with-data` (includes sample data)
+2. **Daily development**: `make dev` (fast startup, no sample data)
+3. **Add sample data**: `make db-seed` (when needed)
+4. **Production testing**: `make prod` (includes Jenkins/Gitea)
+
 ## 📋 Available Commands
 
-### Make Commands (Recommended)
+### 🚀 Quick Start Commands
 ```bash
-make help           # Show all available commands
-make setup          # Initial setup
-make dev            # Start development servers
-make build          # Build for production
-make clean          # Clean runtime files
-make docker-dev     # Development with Docker
+make help              # Show all available commands
+make dev-with-data     # Start development with sample data (recommended)
+make dev               # Start development (no Jenkins/Gitea, no sample data)
+make prod              # Start production (includes Jenkins/Gitea)
+```
+
+### 📊 Database Commands
+```bash
+make db-seed           # Add sample data to existing database
+make db-reset          # Reset database and add sample data
+```
+
+### 🛠️ Development Commands
+```bash
+make setup             # Initial setup
+make build             # Build for production
+make clean             # Clean runtime files
+make docker-dev        # Development with Docker (legacy)
+make docker-prod       # Production with Docker (legacy)
+make docker-down       # Stop Docker containers
+make docker-clean      # Stop containers and clean volumes
 ```
 
 ### npm Scripts
@@ -93,10 +123,14 @@ DB_PASSWORD=vintage_password
 The application automatically creates tables using Sequelize ORM when starting. For development with sample data:
 
 ```bash
-# Start the development environment
-make dev
+# Option 1: Start with sample data (recommended)
+make dev-with-data
 
-# Insert sample data (after containers are running)
+# Option 2: Start without data, then add sample data
+make dev
+make db-seed
+
+# Option 3: Manual database seeding (legacy method)
 docker exec -i vintage-market-mysql mysql -u root -proot_password vintagemarket < database/seed_data_clean.sql
 
 # Note: The seed_data_clean.sql file includes UTF-8 character set configuration
@@ -117,21 +151,74 @@ The `database/seed_data_clean.sql` file contains:
 ### Hot Reloading
 Both frontend and backend support hot reloading in development mode.
 
+## 🔧 CI/CD Environment (Production Only)
+
+### Jenkins & Gitea Setup
+The production environment includes Jenkins and Gitea for CI/CD:
+
+- **Jenkins**: http://192.168.201.102:8080
+- **Gitea**: http://192.168.201.102:3002
+
+### CI/CD Workflow
+1. **Code Push** → Gitea repository
+2. **Webhook Trigger** → Jenkins automatically builds
+3. **Docker Build** → New images created
+4. **Deploy** → Services updated on host
+
+### Jenkins Configuration
+Jenkins is configured with:
+- Docker CLI for building images
+- Git for source code management
+- Docker socket access for host deployment
+- Pipeline support for automated builds
+
+### Gitea Integration
+Gitea provides:
+- Git repository hosting
+- Webhook integration with Jenkins
+- User management and access control
+- Issue tracking and pull requests
+
 ## 🐳 Docker Deployment
 
-### Development
+### Development Environment
 ```bash
+# Recommended: Start with sample data
+make dev-with-data
+
+# Alternative: Start without sample data
+make dev
+
+# Legacy method
 make docker-dev
 # or
 docker-compose up --build
 ```
 
-### Production  
+### Production Environment
 ```bash
+# Start production with Jenkins/Gitea
+make prod
+
+# Legacy method
 make docker-prod
 # or  
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+docker-compose --profile production -f docker-compose.yml -f docker-compose.prod.yml up --build
 ```
+
+### Environment Differences
+- **Development (`make dev`)**: 
+  - Fast startup (no Jenkins/Gitea)
+  - Localhost URLs
+  - Hot reloading enabled
+  - Volume mounts for live code editing
+
+- **Production (`make prod`)**: 
+  - Complete CI/CD environment
+  - Jenkins (http://192.168.201.102:8080)
+  - Gitea (http://192.168.201.102:3002)
+  - Production URLs (192.168.201.102)
+  - No volume mounts
 
 #### Compose Files
 - `docker-compose.yml`: Base services (backend, frontend, MySQL, phpMyAdmin), ports, volumes, networks
@@ -188,18 +275,18 @@ make port-clean     # Clean conflicting processes
 
 ### Database Issues
 ```bash
-# Reset database and insert sample data
+# Quick fixes using Makefile commands
+make db-seed           # Add sample data to existing database
+make db-reset          # Reset database and add sample data
+
+# Manual database operations
 docker exec -i vintage-market-mysql mysql -u root -proot_password vintagemarket < database/seed_data_clean.sql
-
-# Access database directly
 docker exec -it vintage-market-mysql mysql -u root -proot_password vintagemarket
-
-# Check database status
 docker exec -it vintage-market-mysql mysql -u root -proot_password vintagemarket -e "SHOW TABLES;"
 
 # Clean and restart database
 make docker-clean
-make dev
+make dev-with-data
 ```
 
 ### Character Encoding Issues (Korean Text)

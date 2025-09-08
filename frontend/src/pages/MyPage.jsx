@@ -568,7 +568,9 @@ const MyPage = () => {
         alert(`${amount}원이 충전되었습니다!`);
         setChargeAmount('');
         // Refresh user data to show updated credits
-        fetchUserData();
+        await fetchUserData();
+        // Also refresh credits immediately in auth context
+        await handleRefreshCredits();
       } else {
         alert(response.data.message || '충전에 실패했습니다.');
       }
@@ -581,7 +583,9 @@ const MyPage = () => {
   };
 
   const handleQuickCharge = (amount) => {
-    setChargeAmount(amount.toString());
+    const currentAmount = parseFloat(chargeAmount) || 0;
+    const newAmount = currentAmount + amount;
+    setChargeAmount(newAmount.toString());
   };
 
   const handleRefreshCredits = async () => {

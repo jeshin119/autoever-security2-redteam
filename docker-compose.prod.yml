@@ -7,6 +7,9 @@ services:
   frontend:
     # Remove volume mounts for production
     volumes: []
+    # Use production target for frontend
+    build:
+      target: production
     
   backend:
     # Remove volume mounts for production

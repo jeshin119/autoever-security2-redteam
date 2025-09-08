@@ -17,10 +17,7 @@ pids/
 *.pid.lock
 
 # Database files
-*.sqlite
 *.db
-*.sqlite3
-database/*.sqlite
 database/*.db
 
 # # Environment variables
@@ -51,12 +48,12 @@ database/*.db
 ehthumbs.db
 Thumbs.db
 
-# PM2 logs and process files
-*.pm2
-.pm2/
 
 # Docker
 .dockerignore
+
+# Jenkins data directory
+jenkins_home/
 
 # Coverage directory used by tools like istanbul
 coverage/

@@ -22,7 +22,7 @@ const Product = sequelize.define('Product', {
     // Intentionally allows HTML/Script injection
   },
   price: {
-    type: DataTypes.DECIMAL(10, 2),
+    type: DataTypes.INTEGER,
     allowNull: false,
     // Intentionally no validation for negative prices
   },
