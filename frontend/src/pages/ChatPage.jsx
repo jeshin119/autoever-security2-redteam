@@ -456,7 +456,7 @@ const ChatPage = () => {
       });
       
       newSocket.on('userLeftRoom', (data) => {
-        // console.log('Received userLeftRoom event:', data);
+        console.log('Received userLeftRoom event:', data);
         setOnlineUsers(prev => {
           const newSet = new Set(prev);
           newSet.delete(data.userId);
@@ -477,18 +477,18 @@ const ChatPage = () => {
       
       // Handle real-time messages
       newSocket.on('message', (data) => {
-        // console.log('Received real-time message:', data);
+        console.log('Received real-time message:', data);
         setMessages(prev => {
           // Skip messages sent by current user (we already have optimistic update)
           if (data.sender_id === (user && user.id)) {
-            // console.log('Skipping own message from Socket.IO:', data.id);
+            console.log('Skipping own message from Socket.IO:', data.id);
             return prev;
           }
           
           // Check if message already exists (avoid duplicates)
           const exists = prev.some(msg => msg.id === data.id);
           if (exists) {
-            // console.log('Message already exists, skipping:', data.id);
+            console.log('Message already exists, skipping:', data.id);
             return prev;
           }
           
@@ -500,7 +500,7 @@ const ChatPage = () => {
             sender: data.sender_id === (user && user.id) ? user.name : '상대방'
           };
           
-          // console.log('Adding new message to UI:', newMessage);
+          console.log('Adding new message to UI:', newMessage);
           const updatedMessages = [...prev, newMessage];
           
           // Scroll to bottom after adding received message
@@ -617,8 +617,8 @@ const ChatPage = () => {
         
         if (response.data && response.data.success) {
           const msgs = response.data.data.map(msg => {
-            // console.log('Message from backend:', msg);
-            // console.log('Current user ID:', user && user.id);
+            console.log('Message from backend:', msg);
+            console.log('Current user ID:', user && user.id);
             return {
               id: msg.id,
               text: msg.message,
