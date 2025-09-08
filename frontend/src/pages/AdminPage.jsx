@@ -348,7 +348,7 @@ const AdminPage = () => {
                 <Td>{product.id}</Td>
                 <Td>{product.title}</Td>
                 <Td>{product.category}</Td>
-                <Td>₩{parseFloat(product.price).toLocaleString()}</Td>
+                <Td>₩{parseInt(product.price).toLocaleString()}</Td>
                 <Td>
                   <StatusBadge role={!product.isSold ? 'admin' : 'user'}>
                     {product.isSold ? '판매완료' : '판매중'}

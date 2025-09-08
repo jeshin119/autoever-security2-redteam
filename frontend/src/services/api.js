@@ -197,6 +197,7 @@ export const productService = {
   searchProducts: (params = {}) => api.get("/products/search", { params }),
   likeProduct: (productId) => api.post(`/products/${productId}/like`),
   unlikeProduct: (productId) => api.delete(`/products/${productId}/like`),
+  toggleLike: (productId) => api.post(`/products/${productId}/like`),
   checkLikeStatus: (productId) => api.get(`/products/${productId}/like`),
   getUserLikedProducts: () => api.get("/products/user/liked"),
   purchaseProduct: (productId, paymentData = {}) => api.post(`/products/${productId}/purchase`, paymentData),

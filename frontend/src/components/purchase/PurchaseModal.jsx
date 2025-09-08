@@ -402,8 +402,8 @@ const PurchaseModal = ({
     return new Intl.NumberFormat('ko-KR').format(price) + '원';
   };
 
-  const userCredits = parseFloat((currentUser && currentUser.credits) || 0);
-  const productPrice = parseFloat(product.price || 0);
+  const userCredits = parseInt((currentUser && currentUser.credits) || 0);
+  const productPrice = parseInt(product.price || 0);
   
   // 배송비 계산
   const deliveryFee = deliveryType === 'express' ? 5000 : 3000;
