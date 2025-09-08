@@ -83,13 +83,16 @@ router.get('/posts/:id', async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'Community post not found' });
     }
 
+    // 조회수 증가
+    await post.increment('views');
+
     // 댓글을 별도로 조회
     const comments = await Comment.findAll({
       where: { post_id: req.params.id },
       include: [
         {
           model: User,
-          as: 'commentAuthor',
+          as: 'author',
           attributes: ['id', 'name', 'email']
         }
       ],

@@ -69,7 +69,7 @@ const Comment = sequelize.define('Comment', {
 // Define associations
 Comment.belongsTo(User, { 
   foreignKey: 'user_id', 
-  as: 'commentAuthor',
+  as: 'author',
   onDelete: 'RESTRICT',  // 사용자에게 댓글이 있으면 삭제 방지
   onUpdate: 'CASCADE'
 });
