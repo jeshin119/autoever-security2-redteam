@@ -400,11 +400,24 @@ const ChatPage = () => {
   useEffect(() => {
     if (user && user.id) {
       // Docker 환경을 고려한 Socket.IO 연결 URL
-      const socketUrl = process.env.REACT_APP_API_URL || 
-                       process.env.REACT_APP_BACKEND_URL || 
-                       'http://localhost:3001';
+      // 임시로 여러 URL 시도
+      const possibleUrls = [
+        process.env.REACT_APP_API_URL,
+        process.env.REACT_APP_BACKEND_URL,
+        'http://localhost:3001',
+        'http://vintage-market-backend:3000',
+        'http://backend:3000',
+        'http://172.20.0.3:3000',
+        'http://192.168.201.102:3001',
+      ].filter(Boolean);
+      
+      const socketUrl = possibleUrls[0] || 'http://localhost:3001';
+      console.log('Available URLs:', possibleUrls);
       
       console.log('Connecting to Socket.IO server:', socketUrl);
+      console.log('Environment variables:');
+      console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
+      console.log('REACT_APP_BACKEND_URL:', process.env.REACT_APP_BACKEND_URL);
       
       const newSocket = io(socketUrl, {
         transports: ['polling', 'websocket'], // polling을 먼저 시도
@@ -428,6 +441,11 @@ const ChatPage = () => {
       
       newSocket.on('connect_error', (error) => {
         console.error('Socket.IO connection error:', error);
+        console.error('Error type:', error.type);
+        console.error('Error description:', error.description);
+        console.error('Error context:', error.context);
+        console.error('Error transport:', error.transport);
+        console.log('Trying to connect to:', socketUrl);
         console.log('Socket.IO: Attempting to reconnect with polling only...');
         
         // WebSocket 실패 시 polling만 사용하여 재연결 시도
