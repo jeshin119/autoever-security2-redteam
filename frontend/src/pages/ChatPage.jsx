@@ -400,8 +400,8 @@ const ChatPage = () => {
   useEffect(() => {
     if (user && user.id) {
       // Docker 환경을 고려한 Socket.IO 연결 URL
-      const socketUrl = import.meta.env.VITE_API_URL || 
-                       import.meta.env.REACT_APP_API_URL || 
+      const socketUrl = process.env.REACT_APP_API_URL || 
+                       process.env.REACT_APP_BACKEND_URL || 
                        'http://localhost:3001';
       
       console.log('Connecting to Socket.IO server:', socketUrl);
