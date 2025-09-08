@@ -53,9 +53,7 @@ module.exports = {
     })
   ],
   devServer: {
-    static: {
-      directory: path.join(__dirname, 'dist')
-    },
+    contentBase: path.join(__dirname, 'dist'),
     compress: true,
     port: 5173,
     host: '0.0.0.0',
@@ -75,9 +73,7 @@ module.exports = {
   },
   optimization: {
     splitChunks: {
-      chunks: 'all',
-      // split chunk는 contenthash 사용 가능
-      filename: '[name].[contenthash].js'
+      chunks: 'all'
     },
     runtimeChunk: 'single'
   }
