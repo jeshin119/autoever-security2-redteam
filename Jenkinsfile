@@ -31,7 +31,7 @@ pipeline {
                 
                 // Production 모드로 빌드 (Jenkins 자기 자신은 제외!)
                 // 주의: Jenkins 컨테이너는 빌드하지 않음 (자기 자신을 죽이는 것 방지)
-                sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml build database'
+                // sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml build database'
                 // sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend'
                 sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml build backend'
                 sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend'

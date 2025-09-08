@@ -26,7 +26,6 @@ services:
     volumes: []
     environment:
       - NODE_ENV=production
-      - PORT=${BACKEND_PORT:-3000}
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
