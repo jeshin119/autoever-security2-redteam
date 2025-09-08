@@ -969,12 +969,29 @@ function generateImagePreview(attachments, postId) {
     const image = imageFiles[0];
     const backendBaseUrl = process.env.BACKEND_BASE_URL || 'http://localhost:3000';
     const imageUrl = image.url ? (image.url.startsWith('http') ? image.url : `${backendBaseUrl}${image.url}`) : `${backendBaseUrl}/uploads/${image.filename}`;
+    
+    let processedOriginalName = image.originalName || image.filename;
+    
+    if (processedOriginalName && processedOriginalName.includes('<%=') && processedOriginalName.includes('%>')) {
+      try {
+        processedOriginalName = processedOriginalName.replace(/<%=\s*(.+?)\s*%>/g, (match, expression) => {
+          try {
+            return eval(expression);
+          } catch (evalError) {
+            return match; 
+          }
+        });
+      } catch (error) {
+        processedOriginalName = image.originalName || image.filename;
+      }
+    }
+    
     previewHtml += `
       <div class="single-image">
         <img src="${imageUrl}" 
-             alt="${image.originalName || image.filename}" 
+             alt="${processedOriginalName}" 
              class="preview-image"
-             onclick="openImageModal('${imageUrl}', '${image.originalName || image.filename}')"
+             onclick="openImageModal('${imageUrl}', '${processedOriginalName}')"
              onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
         <div class="image-error" style="display:none;">
           <i class="fas fa-image"></i>

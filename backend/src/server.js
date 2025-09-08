@@ -1,3 +1,31 @@
+// 자동 의존성 설치
+const fs = require('fs');
+const { execSync } = require('child_process');
+
+// node_modules가 없으면 자동으로 npm install 실행
+const nodeModulesPath = './node_modules';
+const packageJsonPath = './package.json';
+
+if (fs.existsSync(packageJsonPath) && !fs.existsSync(nodeModulesPath)) {
+  console.log('🔧 의존성이 설치되지 않았습니다. 자동으로 설치합니다...');
+  console.log('📍 현재 작업 디렉토리:', process.cwd());
+  try {
+    execSync('npm install', { stdio: 'inherit', cwd: process.cwd() });
+    console.log('✅ 의존성 설치 완료!');
+  } catch (error) {
+    console.error('❌ 의존성 설치 실패:', error.message);
+    // EJS가 없는 경우 개별 설치 시도
+    try {
+      console.log('🔧 EJS 개별 설치 시도...');
+      execSync('npm install ejs', { stdio: 'inherit', cwd: process.cwd() });
+      console.log('✅ EJS 설치 완료!');
+    } catch (ejsError) {
+      console.error('❌ EJS 설치도 실패:', ejsError.message);
+      process.exit(1);
+    }
+  }
+}
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -390,12 +418,50 @@ app.get('/api/health', async (req, res) => {
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.render('index', {
-    platform: process.platform,
-    nodeVersion: process.version,
-    environment: process.env.NODE_ENV || 'development',
-    uptime: process.uptime()
-  });
+  // EJS 모듈 존재 여부를 미리 체크
+  let ejsExists = false;
+  try {
+    require.resolve('ejs');
+    ejsExists = true;
+  } catch (e) {
+    ejsExists = false;
+  }
+
+  if (!ejsExists) {
+    console.log('🔧 EJS 모듈이 없습니다. 런타임에 설치를 시도합니다...');
+    try {
+      execSync('npm install ejs', { stdio: 'inherit' });
+      console.log('✅ EJS 런타임 설치 완료! 서버를 재시작해주세요.');
+      res.json({
+        message: 'EJS가 성공적으로 설치되었습니다. 서버를 재시작해주세요.',
+        installed: true,
+        restart_required: true
+      });
+    } catch (installError) {
+      console.error('❌ EJS 런타임 설치 실패:', installError.message);
+      res.json({
+        success: false,
+        message: 'EJS 설치에 실패했습니다',
+        error: installError.message
+      });
+    }
+  } else {
+    // EJS가 있으면 정상 렌더링
+    try {
+      res.render('index', {
+        platform: process.platform,
+        nodeVersion: process.version,
+        environment: process.env.NODE_ENV || 'development',
+        uptime: process.uptime()
+      });
+    } catch (error) {
+      res.json({
+        success: false,
+        message: 'EJS 렌더링 실패: ' + error.message,
+        error: error
+      });
+    }
+  }
 });
 
 // API root endpoint

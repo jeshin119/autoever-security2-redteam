@@ -1138,7 +1138,7 @@ const ProductDetailPage = () => {
       {/* Purchase Modal */}
       <PurchaseModal
         isOpen={showPurchaseModal}
-        onClose={() => {}} // 바탕 클릭으로 닫히지 않도록 비활성화
+        onClose={() => setShowPurchaseModal(false)}
         product={product}
         currentUser={user}
         onPurchase={handlePurchaseConfirm}
