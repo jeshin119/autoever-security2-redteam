@@ -421,30 +421,33 @@ const ProductListPage = () => {
     const locationParam = urlParams.get('location') || '';
 
     // 필터 상태 업데이트
-    setFilters({
+    const newFilters = {
       search: search,
       category: category || 'All Categories',
       condition: condition,
       priceMin: '',
       priceMax: '',
       location: locationParam
-    });
+    };
+    
+    setFilters(newFilters);
+
+    // URL 파라미터가 있을 때 자동으로 필터 적용
+    if (category || search || condition || locationParam) {
+      fetchProducts(newFilters);
+    }
   }, [location.search]); // location.search 변경 시 실행
 
-  // 자동 검색 제거 - 필터 적용 버튼으로 수동 검색
-  // useEffect(() => {
-  //   fetchProducts();
-  // }, [filters.category, filters.condition, filters.location]); // search 제외한 필터만 감지
-
-  const fetchProducts = async () => {
+  const fetchProducts = async (customFilters = null) => {
     try {
       setLoading(true);
-      const apiCondition = normalizeCondition(filters.condition);
+      const currentFilters = customFilters || filters;
+      const apiCondition = normalizeCondition(currentFilters.condition);
       const response = await productService.getProducts({
-        search: filters.search,
-        category: filters.category !== 'All Categories' ? filters.category : '',
+        search: currentFilters.search,
+        category: currentFilters.category !== 'All Categories' ? currentFilters.category : '',
         condition: apiCondition,
-        location: filters.location
+        location: currentFilters.location
       });
       setProducts((response.data && response.data.data) || []);
     } catch (error) {

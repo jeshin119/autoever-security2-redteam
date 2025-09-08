@@ -784,10 +784,10 @@ const ProductDetailPage = () => {
       const response = await productService.toggleLike(id);
       if (response.data && response.data.success) {
         setIsLiked(response.data.data.isLiked);
-        // Optimistically update likes count
+        // Update likes count with server response
         setProduct(prev => ({
           ...prev,
-          likes: response.data.data.isLiked ? (prev.likes || 0) + 1 : (prev.likes || 1) - 1
+          likes: response.data.data.likes
         }));
       }
     } catch (error) {

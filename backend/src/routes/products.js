@@ -653,7 +653,7 @@ router.get('/search/:query', async (req, res) => {
 
 
 
-// Like product (vulnerable to manipulation)
+// Toggle product like (like community posts)
 router.post('/:id/like', async (req, res) => {
   try {
     const { id } = req.params;
@@ -696,33 +696,41 @@ router.post('/:id/like', async (req, res) => {
       where: { userId, productId: id }
     });
     
+    let isLiked;
+    let newLikesCount;
+    
     if (existingLike) {
-      return res.status(400).json({
-        success: false,
-        message: '이미 찜한 상품입니다.'
+      // 이미 좋아요를 누른 상태 -> 좋아요 취소
+      await existingLike.destroy();
+      newLikesCount = Math.max(0, (product.likes || 0) - 1);
+      isLiked = false;
+    } else {
+      // 좋아요를 누르지 않은 상태 -> 좋아요 추가
+      await UserLikes.create({
+        userId,
+        productId: id
       });
+      newLikesCount = (product.likes || 0) + 1;
+      isLiked = true;
     }
     
-    // Add like to user_likes table
-    await UserLikes.create({
-      userId,
-      productId: id
-    });
-    
-    // Increment product likes count
-    product.likes += 1;
+    // Update product likes count
+    product.likes = newLikesCount;
     await product.save();
     
     res.json({
       success: true,
-      message: '상품을 찜했습니다.',
-      data: { likes: product.likes }
+      message: isLiked ? '상품을 찜했습니다.' : '찜을 취소했습니다.',
+      data: { 
+        likes: newLikesCount,
+        isLiked: isLiked
+      }
     });
     
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error liking product',
+      message: 'Error toggling product like',
       error: error.message,
       stack: error.stack
     });
