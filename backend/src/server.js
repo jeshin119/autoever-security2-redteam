@@ -177,20 +177,10 @@ io.on('connection', (socket) => {
   socket.on('sendMessage', async (data) => {
     console.log(`[Socket.IO] Received sendMessage from ${socket.id}:`, data);
     try {
-      // Find the receiver_id by looking at other users in the same room
-      const room = io.sockets.adapter.rooms[data.productId];
-      let receiverId = null;
-      
-      if (room) {
-        const otherSockets = Object.keys(room.sockets).filter(socketId => socketId !== socket.id);
-        if (otherSockets.length > 0) {
-          // Get the first other user in the room as receiver
-          const otherSocketId = otherSockets[0];
-          receiverId = socketUsers.get(otherSocketId);
-        }
+      const receiverId = data.receiverId || null;
+      if (!receiverId) {
+        console.warn(`[Socket.IO] Missing receiverId in sendMessage payload for room ${data.productId}`);
       }
-      
-      console.log(`[Socket.IO] Determined receiver_id: ${receiverId} for room ${data.productId}`);
       
       const message = await ChatMessage.create({
         sender_id: data.senderId,

@@ -793,6 +793,7 @@ const ChatPage = () => {
         socket.emit('sendMessage', {
           message: messageText,
           senderId: user && user.id,
+          receiverId: selectedRoom && selectedRoom.partnerId,
           productId: selectedRoom.productId
         });
       }
