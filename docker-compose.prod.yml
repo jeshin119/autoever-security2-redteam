@@ -8,18 +8,18 @@ services:
     # Remove volume mounts for production
     volumes: []
     # Use production target for frontend
-    build:
-      target: production
-      args:
-        - REACT_APP_API_URL=${REACT_APP_API_URL}
-        - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
-        - VITE_API_URL=${VITE_API_URL}
-    environment:
-      - NODE_ENV=production
-      - REACT_APP_API_URL=${REACT_APP_API_URL}
-      - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
-      - VITE_API_URL=${VITE_API_URL}
-    command: nginx -g 'daemon off;'
+    # build:
+    #   target: production
+    #   args:
+    #     - REACT_APP_API_URL=${REACT_APP_API_URL}
+    #     - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+    #     - VITE_API_URL=${VITE_API_URL}
+    # environment:
+    #   - NODE_ENV=production
+    #   - REACT_APP_API_URL=${REACT_APP_API_URL}
+    #   - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL}
+    #   - VITE_API_URL=${VITE_API_URL}
+    # command: nginx -g 'daemon off;'
     
   backend:
     # Remove volume mounts for production
