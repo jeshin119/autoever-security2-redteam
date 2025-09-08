@@ -374,6 +374,8 @@ const RelatedSection = styled.div`
   padding: 2rem;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 0;
 `;
 
 const RelatedGrid = styled.div`
@@ -383,13 +385,16 @@ const RelatedGrid = styled.div`
   margin-top: 1rem;
 `;
 
-const RelatedProductCard = styled(Link)`
+const RelatedProductCard = styled.div`
   display: block;
   background: ${props => props.theme.colors.backgroundSecondary};
   border-radius: 8px;
   overflow: hidden;
   text-decoration: none;
   transition: transform 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  z-index: 1;
   
   &:hover {
     transform: translateY(-2px);
@@ -546,7 +551,17 @@ const ProductDetailPage = () => {
     const fetchProductWithCleanup = async () => {
       try {
         if (!isMountedRef.current) return;
+        
+        // 상태 초기화
+        setProduct(null);
         setLoading(true);
+        setError('');
+        setCurrentImageIndex(0);
+        setIsLiked(false);
+        setRelatedProducts([]);
+        
+        // 페이지 스크롤을 맨 위로 이동
+        window.scrollTo(0, 0);
         
         const resp = await productService.getProduct(id);
         if (!isMountedRef.current) return;
@@ -616,6 +631,11 @@ const ProductDetailPage = () => {
     return () => {
       isMountedRef.current = false;
     };
+  }, [id]);
+
+  // id가 변경될 때마다 isMountedRef를 다시 true로 설정
+  useEffect(() => {
+    isMountedRef.current = true;
   }, [id]);
 
   // Check if user has liked this product
@@ -1070,7 +1090,11 @@ const ProductDetailPage = () => {
             {relatedProducts.map(relatedProduct => (
               <RelatedProductCard
                 key={relatedProduct.id}
-                to={`/products/${relatedProduct.id}`}
+                onClick={(e) => {
+                  console.log('Related product clicked:', relatedProduct.id);
+                  console.log('Navigating to:', `/products/${relatedProduct.id}`);
+                  history.push(`/products/${relatedProduct.id}`);
+                }}
               >
                 <RelatedProductImage
                   image={getImageUrl((relatedProduct.images && relatedProduct.images[0]))}
