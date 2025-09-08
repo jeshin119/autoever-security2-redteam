@@ -29,7 +29,8 @@ pipeline {
                 // docker-compose.yml 파일 확인
                 // sh 'test -f docker-compose.yml && echo "docker-compose.yml exists" || echo "docker-compose.yml NOT FOUND"'
                 
-                // Production 모드로 빌드
+                // Production 모드로 빌드 (Jenkins 자기 자신은 제외!)
+                // 주의: Jenkins 컨테이너는 빌드하지 않음 (자기 자신을 죽이는 것 방지)
                 sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml build database'
                 sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml build backend'
                 sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend'
@@ -42,6 +43,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploy stage: Deploying production application...'
+                // 애플리케이션 서비스만 재배포 (Jenkins는 계속 실행 상태 유지)
                 sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml down backend'
                 sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml down frontend'
                 sh 'docker compose -f docker-compose.yml -f docker-compose.prod.yml up backend -d'

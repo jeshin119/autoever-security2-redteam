@@ -9,16 +9,19 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/24
+    name: mitre-project_dmz_net
   internal_net:
     driver: bridge
     ipam:
       config:
         - subnet: 172.21.0.0/24
+    name: mitre-project_internal_net
   dev_net:
     driver: bridge
     ipam:
       config:
         - subnet: 172.22.0.0/24
+    name: mitre-project_dev_net
 
 # 2. 서비스(컨테이너) 정의
 services:
