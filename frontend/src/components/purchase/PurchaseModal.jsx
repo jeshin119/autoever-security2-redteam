@@ -11,10 +11,10 @@ const ModalOverlay = styled.div`
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
+  z-index: 99999;
+  padding: 2rem 1rem;
 `;
 
 const ModalContent = styled.div`
@@ -22,8 +22,9 @@ const ModalContent = styled.div`
   border-radius: 12px;
   max-width: 600px;
   width: 100%;
-  max-height: 95vh;
+  max-height: 90vh;
   overflow-y: auto;
+  margin-top: 2rem;
   position: relative;
 `;
 
@@ -396,7 +397,7 @@ const PurchaseModal = ({
   const [couponLoading, setCouponLoading] = useState(false);
   const [phoneError, setPhoneError] = useState('');
 
-  if (!isOpen || !product) return null;
+  if (!product) return null;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('ko-KR').format(price) + '원';
@@ -494,14 +495,15 @@ const PurchaseModal = ({
   };
 
   return (
-    <ModalOverlay onClick={onClose}>
+    <ModalOverlay style={{ pointerEvents: 'none' }}>
+      <div style={{ pointerEvents: 'auto' }}>
       <ModalContent onClick={e => e.stopPropagation()}>
         <ModalHeader>
           <ModalTitle>
             <FiShoppingCart />
             주문/결제
           </ModalTitle>
-          <CloseButton onClick={onClose}>
+          <CloseButton onClick={() => window.location.reload()}>
             <FiX />
           </CloseButton>
         </ModalHeader>
@@ -741,6 +743,7 @@ const PurchaseModal = ({
           </Button>
         </ModalFooter>
       </ModalContent>
+      </div>
     </ModalOverlay>
   );
 };

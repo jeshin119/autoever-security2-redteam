@@ -7,14 +7,14 @@ import SearchBar from '../common/SearchBar';
 import NotificationBadge from '../common/NotificationBadge';
 
 const HeaderContainer = styled.header`
-  position: fixed;
+  position: relative;
   top: 0;
   left: 0;
   right: 0;
   height: 60px;
   background: ${props => props.theme.colors.backgroundPaper};
   border-bottom: 1px solid ${props => props.theme.colors.border};
-  z-index: ${props => props.theme.zIndex.fixed};
+  z-index: 100;
   box-shadow: ${props => props.theme.shadows.sm};
 `;
 
