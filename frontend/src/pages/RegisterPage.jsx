@@ -3,7 +3,7 @@ import { Link, useHistory } from 'react-router-dom';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
 import { FiUser, FiMail, FiLock, FiPhone, FiMapPin, FiEye, FiEyeOff } from 'react-icons/fi';
-import authService from '../services/authService';
+import { authService } from '../services/api';
 
 const Container = styled.div`
   min-height: calc(100vh - 60px);
