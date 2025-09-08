@@ -552,6 +552,20 @@ const MyPage = () => {
     return date.toLocaleDateString('ko-KR');
   };
 
+  // images 필드를 문자열/배열 모두 호환되게 정규화
+  const toImagesArray = (val) => {
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  };
+
   const handleChargeCredits = async (e) => {
     e.preventDefault();
     
@@ -665,7 +679,7 @@ const MyPage = () => {
       <ProductGrid>
         {products.map((product) => (
           <ProductCard key={product.id} as={Link} to={`/products/${product.id}`} className={product.isSold ? 'sold' : ''}>
-            <ProductImage image={getImageUrl((product.images && product.images[0]))}>
+            <ProductImage image={getImageUrl(toImagesArray(product.images)[0])}>
               <StatusBadge status={product.isSold ? 'sold' : 'available'}>
                 {getStatusText(product.isSold)}
               </StatusBadge>
