@@ -176,22 +176,34 @@ io.on('connection', (socket) => {
 
   socket.on('sendMessage', async (data) => {
     console.log(`[Socket.IO] Received sendMessage from ${socket.id}:`, data);
+    console.log(`[Socket.IO] Socket user ID:`, socket.userId);
+    console.log(`[Socket.IO] Room ID:`, data.roomId);
+    console.log(`[Socket.IO] Sender ID:`, data.senderId);
+    console.log(`[Socket.IO] Receiver ID:`, data.receiverId);
+    console.log(`[Socket.IO] Message:`, data.message);
+    
     try {
       const receiverId = data.receiverId || null;
       if (!receiverId) {
         console.warn(`[Socket.IO] Missing receiverId in sendMessage payload for room ${data.roomId}`);
       }
       
+      console.log(`[Socket.IO] Creating message in database...`);
       const message = await ChatMessage.create({
         sender_id: data.senderId,
         receiver_id: receiverId,
         room_id: data.roomId,
         message: data.message,
       });
-      console.log(`[Socket.IO] Emitting message to room ${data.roomId}:`, message);
+      console.log(`[Socket.IO] Message created successfully:`, message.toJSON());
+      
+      console.log(`[Socket.IO] Emitting message to room ${data.roomId}...`);
       io.to(data.roomId).emit('message', message);
+      console.log(`[Socket.IO] Message emitted to room ${data.roomId}`);
     } catch (error) {
       console.error('[Socket.IO] Error saving message:', error);
+      console.error('[Socket.IO] Error details:', error.message);
+      console.error('[Socket.IO] Error stack:', error.stack);
     }
   });
 
