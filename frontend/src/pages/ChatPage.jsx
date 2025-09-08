@@ -415,6 +415,7 @@ const ChatPage = () => {
       // Connection event handlers
       newSocket.on('connect', () => {
         console.log('Socket.IO connected:', newSocket.id);
+        console.log('Socket transport:', newSocket.io.engine.transport.name);
         setIsSocketConnected(true);
       });
       
@@ -793,13 +794,26 @@ const ChatPage = () => {
 
     try {
       // Send message via Socket.IO for real-time delivery
+      console.log('=== SENDING MESSAGE DEBUG ===');
+      console.log('Socket exists:', !!socket);
+      console.log('Socket connected:', isSocketConnected);
+      console.log('User ID:', user && user.id);
+      console.log('Selected room:', selectedRoom);
+      console.log('Room ID:', selectedRoom && selectedRoom.id);
+      console.log('Partner ID:', selectedRoom && selectedRoom.partnerId);
+      
       if (socket && isSocketConnected) {
-        socket.emit('sendMessage', {
+        const messageData = {
           message: messageText,
           senderId: user && user.id,
           receiverId: selectedRoom && selectedRoom.partnerId,
           roomId: selectedRoom.id
-        });
+        };
+        console.log('Emitting sendMessage with data:', messageData);
+        socket.emit('sendMessage', messageData);
+        console.log('sendMessage event emitted successfully');
+      } else {
+        console.log('Cannot send via Socket.IO - socket not connected or not available');
       }
       
       // Also send to API for persistence
