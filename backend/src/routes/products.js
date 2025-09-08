@@ -981,19 +981,13 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
       discount = 0
     } = purchaseData;
 
-    // Calculate expected total (서버에서 재검증)
-    const productPrice = parseInt(product.price);
-    const calculatedDeliveryFee = deliveryType === 'express' ? 5000 : 3000;
-    const expectedTotal = productPrice + calculatedDeliveryFee - (discount || 0);
-
-    // Check if user has enough credits (race condition vulnerability)
-    const buyer = await User.findByPk(buyerId);
-    const userCredits = parseInt(buyer.credits || 0);
-
-    if (userCredits < expectedTotal) {
+    // 의도적 ReDoS 취약점 예시 (교육용 - 실제 서비스에서는 절대 사용 금지)
+    // 공격 예시: "010-1111111111111111111111111111111111111111!"
+    // 이런 코드는 정적 분석 도구나 코드 리뷰에서 반드시 발견해야 함
+    if (deliveryInfo.phone && !/^(01[0-9])?-?(\d+)*-?(\d+)*$/.test(deliveryInfo.phone)) {
       return res.status(400).json({
         success: false,
-        message: `크레딧이 부족합니다. 필요: ${expectedTotal}원, 보유: ${userCredits}원`
+        message: '전화번호 형식이 잘못되었습니다.'
       });
     }
 
@@ -1012,13 +1006,19 @@ router.post('/:id/purchase', authenticateToken, async (req, res) => {
       });
     }
 
-    // 의도적 ReDoS 취약점 예시 (교육용 - 실제 서비스에서는 절대 사용 금지)
-    // 공격 예시: "010-1111111111111111111111111111111111111111!"
-    // 이런 코드는 정적 분석 도구나 코드 리뷰에서 반드시 발견해야 함
-    if (deliveryInfo.phone && !/^(01[0-9])?-?(\d+)*-?(\d+)*$/.test(deliveryInfo.phone)) {
+    // Calculate expected total (서버에서 재검증)
+    const productPrice = parseInt(product.price);
+    const calculatedDeliveryFee = deliveryType === 'express' ? 5000 : 3000;
+    const expectedTotal = productPrice + calculatedDeliveryFee - (discount || 0);
+
+    // Check if user has enough credits (race condition vulnerability)
+    const buyer = await User.findByPk(buyerId);
+    const userCredits = parseInt(buyer.credits || 0);
+
+    if (userCredits < expectedTotal) {
       return res.status(400).json({
         success: false,
-        message: '전화번호 형식이 잘못되었습니다.'
+        message: `크레딧이 부족합니다. 필요: ${expectedTotal}원, 보유: ${userCredits}원`
       });
     }
 
