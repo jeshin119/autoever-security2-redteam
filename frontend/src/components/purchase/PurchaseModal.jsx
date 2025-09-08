@@ -397,7 +397,7 @@ const PurchaseModal = ({
   const [couponLoading, setCouponLoading] = useState(false);
   const [phoneError, setPhoneError] = useState('');
 
-  if (!product) return null;
+  if (!isOpen || !product) return null;
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('ko-KR').format(price) + '원';
