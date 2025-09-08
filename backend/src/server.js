@@ -108,16 +108,6 @@ const io = socketio(httpServer, {
   cors: {
     origin: [
       process.env.FRONTEND_URL || 'http://localhost:5173',
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-      'http://frontend:5173', // Docker 컨테이너 이름
-      'http://vintage-market-frontend:5173', // Docker 컨테이너 이름
-      'http://172.20.0.2:5173', // Docker 네트워크 IP
-      'http://172.20.0.3:5173', // Docker 네트워크 IP
-      'http://172.20.0.4:5173',  // Docker 네트워크 IP
-      // 다른 호스트에서 접속하는 프론트엔드를 위한 설정
-      /^http:\/\/192\.168\.201\.\d+:\d+$/, // 192.168.201.x 네트워크 허용
-      /^http:\/\/.*:\d+$/ // 개발 환경에서 모든 포트 허용 (보안상 주의)
     ],
     methods: ['GET', 'POST'],
     credentials: true,
