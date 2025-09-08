@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const authenticateToken = require('../middleware/authenticateToken');
+const { sequelize } = require('../config/database');
 
 // 업로드 폴더 보장(없으면 생성) — 취약 그대로
 const UPLOAD_DIR = path.join(__dirname, '../uploads/');
@@ -569,7 +570,31 @@ router.delete('/:id', async (req, res) => {
       // Continue with product deletion even if file deletion fails
     }
     
-    await product.destroy();
+    // Delete dependent chat data first to satisfy FK constraints
+    const { ChatRoom, ChatMessage } = sequelize.models;
+    await sequelize.transaction(async (t) => {
+      // Find chat rooms for this product
+      const rooms = await ChatRoom.findAll({
+        where: { product_id: id },
+        attributes: ['id'],
+        transaction: t
+      });
+      const roomIds = rooms.map(r => r.id);
+
+      // Delete chat messages linked to those rooms
+      if (roomIds.length > 0) {
+        await ChatMessage.destroy({ where: { room_id: roomIds }, transaction: t });
+      }
+
+      // Delete chat messages that may directly reference the product
+      await ChatMessage.destroy({ where: { product_id: id }, transaction: t });
+
+      // Delete chat rooms for this product
+      await ChatRoom.destroy({ where: { product_id: id }, transaction: t });
+
+      // Finally delete the product
+      await product.destroy({ transaction: t });
+    });
     
     res.json({
       success: true,
