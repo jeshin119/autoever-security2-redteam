@@ -52,9 +52,7 @@ module.exports = {
     })
   ],
   devServer: {
-    static: {
-      directory: path.join(__dirname, 'dist'),
-    },
+    contentBase: path.join(__dirname, 'dist'),
     compress: true,
     port: 5173,
     host: '0.0.0.0',
@@ -63,9 +61,7 @@ module.exports = {
     headers: {
       'Cache-Control': 'no-store', // 브라우저 캐시 무시
     },
-    devMiddleware: {
-      writeToDisk: false, // 메모리 기반 번들 사용
-    },
+    publicPath: '/',
     proxy: {
       '/api': {
         target: process.env.VITE_API_URL || 'http://backend:3000',
