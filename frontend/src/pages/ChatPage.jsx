@@ -172,6 +172,7 @@ const MessageGroup = styled.div`
   flex-direction: column;
   align-items: ${props => props.isOwn ? 'flex-end' : 'flex-start'};
   gap: 0.25rem;
+  margin: ${props => props.isOwn ? '0 1rem 0 0' : '0 0 0 1rem'};
 `;
 
 const Message = styled.div`
@@ -183,12 +184,21 @@ const Message = styled.div`
   font-size: 0.95rem;
   line-height: 1.4;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  word-wrap: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
+  height: auto;
+  display: inline-block;
+  align-self: ${props => props.isOwn ? 'flex-end' : 'flex-start'};
 `;
 
 const MessageTime = styled.span`
   font-size: 0.75rem;
   color: ${props => props.theme.colors.textSecondary};
   margin: 0 0.5rem;
+  white-space: nowrap;
+  align-self: flex-end;
+  margin-bottom: 0.25rem;
 `;
 
 const MessageInput = styled.div`
@@ -524,7 +534,7 @@ const ChatPage = () => {
                     id: data.id,
                     text: data.message,
                     isOwn: true,
-                    timestamp: data.createdAt,
+                    timestamp: data.created_at || data.createdAt,
                     sender: user.name
                   };
                   break;
@@ -539,7 +549,7 @@ const ChatPage = () => {
             id: data.id,
             text: data.message,
             isOwn: isOwnMessage,
-            timestamp: data.createdAt,
+            timestamp: data.created_at || data.createdAt,
             sender: isOwnMessage ? user.name : '상대방'
           };
           
@@ -666,7 +676,7 @@ const ChatPage = () => {
               id: msg.id,
               text: msg.message,
               isOwn: msg.sender_id === (user && user.id), // Use sender_id from backend
-              timestamp: msg.createdAt,
+              timestamp: msg.created_at || msg.createdAt,
               sender: msg.sender_id === (user && user.id) ? user.name : selectedRoom.partnerName
             };
           });
