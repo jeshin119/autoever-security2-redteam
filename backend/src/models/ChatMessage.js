@@ -34,10 +34,14 @@ const ChatMessage = sequelize.define('ChatMessage', {
   message_type: {
       type: DataTypes.ENUM('text', 'image', 'file'),
       defaultValue: 'text'
+  },
+  created_at: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
+    allowNull: false
   }
 }, {
   tableName: 'chat_messages',
-  timestamps: true,
   underscored: true,
 });
 

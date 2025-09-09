@@ -40,6 +40,7 @@ const PortManager = require('./utils/portManager');
 require('dotenv').config();
 
 const { connectDB, sequelize } = require('./config/database');
+const { pool } = require('./config/mysql2');
 
 // Import models
 const User = require('./models/User');
@@ -193,17 +194,56 @@ io.on('connection', (socket) => {
       }
       
       console.log(`[Socket.IO] Creating message in database...`);
-      const message = await ChatMessage.create({
-        sender_id: data.senderId,
-        receiver_id: receiverId,
-        room_id: data.roomId,
-        message: data.message,
-      });
-      console.log(`[Socket.IO] Message created successfully:`, message.toJSON());
       
-      console.log(`[Socket.IO] Emitting message to room ${data.roomId}...`);
-      io.to(data.roomId).emit('message', message);
-      console.log(`[Socket.IO] Message emitted to room ${data.roomId}`);
+      console.log(`[Socket.IO] Getting MySQL connection...`);
+      const connection = await pool.getConnection();
+      console.log(`[Socket.IO] ✅ MySQL connection acquired successfully`);
+      
+      try {
+        const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        
+        const query = `INSERT INTO chat_messages (sender_id, receiver_id, room_id, message) VALUES (${data.senderId}, ${receiverId}, ${data.roomId}, '${data.message}')`;
+        
+        console.log('[Socket.IO] Query executed:', query);
+        
+        const [result] = await connection.query(query);
+        
+        // 저장된 메시지 조회 (result가 배열인 경우 처리)
+        let insertId;
+        if (Array.isArray(result)) {
+          insertId = result[0].insertId;
+        } else {
+          insertId = result.insertId;
+        }
+        
+        if (insertId) {
+          const [rows] = await connection.query(`SELECT * FROM chat_messages WHERE id = ${insertId}`);
+          const savedMessage = Array.isArray(rows) ? rows[0] : rows;
+          
+          console.log(`[Socket.IO] Message created successfully:`, savedMessage);
+          
+          console.log(`[Socket.IO] Emitting message to room ${data.roomId}...`);
+          io.to(data.roomId).emit('message', savedMessage);
+          console.log(`[Socket.IO] Message emitted to room ${data.roomId}`);
+        } else {
+          console.log('[Socket.IO] No message inserted');
+          socket.emit('messageError', { message: 'No message was inserted' });
+        }
+        
+      } catch (sqlError) {
+        connection.release();
+        console.error('[Socket.IO] SQL Error:', sqlError);
+        console.error('[Socket.IO] SQL Error details:', sqlError.message);
+        console.error('[Socket.IO] SQL State:', sqlError.sqlState);
+        console.error('[Socket.IO] Error Number:', sqlError.errno);
+        
+        socket.emit('messageError', {
+          error: sqlError.message,
+          sqlState: sqlError.sqlState,
+          errno: sqlError.errno
+        });
+      }
+      
     } catch (error) {
       console.error('[Socket.IO] Error saving message:', error);
       console.error('[Socket.IO] Error details:', error.message);
@@ -243,7 +283,7 @@ async function initializeApp() {
 // Initialize the app
 initializeApp();
 
-// Intentionally vulnerable: Weak security headers
+// Security headers configuration
 app.use(helmet({
   contentSecurityPolicy: false, // Disabled for XSS vulnerabilities
   frameguard: false, // Disabled for clickjacking
@@ -277,7 +317,7 @@ app.use(session({
   saveUninitialized: true,
   cookie: {
     secure: false, // Not using HTTPS
-    httpOnly: false, // Vulnerable to XSS
+    httpOnly: false,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
@@ -494,7 +534,7 @@ app.use((req, res) => {
   res.status(404).json({
     error: 'Not Found',
     message: `Cannot ${req.method} ${req.path}`,
-    // Intentionally vulnerable: Stack trace exposure
+    // Stack trace exposure
     stack: new Error().stack
   });
 });
