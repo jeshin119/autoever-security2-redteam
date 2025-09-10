@@ -3,7 +3,10 @@ const router = express.Router();
 const { Op } = require('sequelize');
 const { sequelize } = require('../config/database');
 const { ChatMessage, User, Product, ChatRoom } = sequelize.models;
+<<<<<<< HEAD
 const { pool } = require('../config/mysql2');
+=======
+>>>>>>> 5f27be1b509e57b5b2522b889115bc3da96bde5c
 
 // Get chat rooms for a user
 router.get('/rooms', async (req, res) => {
@@ -161,6 +164,7 @@ router.get('/rooms/:roomId/messages', async (req, res) => {
     });
 
     res.json({ success: true, data: messages });
+<<<<<<< HEAD
   } catch (error) {
     console.error('Error fetching messages:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch messages', error: error.message });
@@ -283,4 +287,103 @@ router.post('/rooms/:roomId/leave', async (req, res) => {
   }
 });
 
+=======
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch messages', error: error.message });
+  }
+});
+
+// Send a message to a chat room
+router.post('/rooms/:roomId/messages', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const roomId = parseInt(req.params.roomId);
+    const { message } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ success: false, message: 'Message content is required' });
+    }
+
+    // 채팅방 정보 조회
+    const chatRoom = await ChatRoom.findByPk(roomId);
+    if (!chatRoom) {
+      return res.status(404).json({ success: false, message: '채팅방을 찾을 수 없습니다.' });
+    }
+
+    // 사용자가 해당 채팅방의 참여자인지 확인
+    if (chatRoom.user1_id !== userId && chatRoom.user2_id !== userId) {
+      return res.status(403).json({ success: false, message: '해당 채팅방에 참여할 권한이 없습니다.' });
+    }
+
+    // 상대방 ID 결정
+    const receiverId = chatRoom.user1_id === userId ? chatRoom.user2_id : chatRoom.user1_id;
+
+    const newMessage = await ChatMessage.create({
+      sender_id: userId,
+      receiver_id: receiverId,
+      message: message,
+      product_id: chatRoom.product_id,
+      room_id: roomId // ChatRoom ID 저장
+    });
+
+    res.status(201).json({ success: true, data: newMessage });
+  } catch (error) {
+    console.error('Error sending message:', error);
+    res.status(500).json({ success: false, message: 'Failed to send message', error: error.message });
+  }
+});
+
+// Leave a chat room
+router.post('/rooms/:roomId/leave', async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const userId = req.user.id;
+    
+    // 1. 채팅방 정보 조회
+    const chatRoom = await ChatRoom.findByPk(roomId);
+    if (!chatRoom) {
+      return res.status(404).json({ success: false, message: '채팅방을 찾을 수 없습니다.' });
+    }
+    
+    // 2. 사용자가 해당 채팅방의 참여자인지 확인
+    if (chatRoom.user1_id !== userId && chatRoom.user2_id !== userId) {
+      return res.status(403).json({ success: false, message: '해당 채팅방에 참여할 권한이 없습니다.' });
+    }
+    
+    // 3. 해당 사용자를 "나감" 상태로 표시
+    if (chatRoom.user1_id === userId) {
+      chatRoom.user1_left = true;
+    } else if (chatRoom.user2_id === userId) {
+      chatRoom.user2_left = true;
+    }
+    
+    await chatRoom.save();
+    
+    // 4. 두 사용자 모두 나갔는지 확인
+    if (chatRoom.user1_left && chatRoom.user2_left) {
+      // 모든 인원이 나갔으면 채팅방과 메시지 삭제
+      await ChatMessage.destroy({ where: { room_id: roomId } });
+      await chatRoom.destroy();
+      
+      return res.json({ 
+        success: true, 
+        message: '채팅방이 완전히 삭제되었습니다.',
+        deleted: true 
+      });
+    }
+    
+    res.json({ 
+      success: true, 
+      message: '채팅방을 나갔습니다. 상대방이 다시 참여할 수 있습니다.',
+      deleted: false 
+    });
+    
+  } catch (error) {
+    console.error('Error leaving chat room:', error);
+    res.status(500).json({ success: false, message: '채팅방 나가기 실패', error: error.message });
+  }
+});
+
+>>>>>>> 5f27be1b509e57b5b2522b889115bc3da96bde5c
 module.exports = router;

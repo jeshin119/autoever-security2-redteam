@@ -28,13 +28,16 @@ router.get('/posts', async (req, res, next) => {
     });
 
     // 로그인된 사용자가 있으면 좋아요 상태도 함께 조회
+    const customEjs = require('../utils/customEjs');
     let postsWithLikeStatus = posts.map(post => {
       const postData = post.toJSON();
       return {
         ...postData,
+        title: customEjs.communityHelpers.processPostTitle(postData.title),
+        content: customEjs.communityHelpers.processPostContent(postData.content),
         isLiked: false, // 기본값
         attachments: post.images || [], // images 필드를 attachments로 변경
-        imagePreviewHtml: postData.images ? require('../utils/customEjs').communityHelpers.renderImagePreview({ id: postData.id, images: postData.images }) : ''
+        imagePreviewHtml: postData.images ? customEjs.communityHelpers.renderImagePreview({ id: postData.id, images: postData.images }) : ''
       };
     });
     
@@ -50,9 +53,11 @@ router.get('/posts', async (req, res, next) => {
         const postData = post.toJSON();
         return {
           ...postData,
+          title: customEjs.communityHelpers.processPostTitle(postData.title),
+          content: customEjs.communityHelpers.processPostContent(postData.content),
           isLiked: likedPostIds.has(post.id),
           attachments: post.images || [], // images 필드를 attachments로 변경
-          imagePreviewHtml: postData.images ? require('../utils/customEjs').communityHelpers.renderImagePreview({ id: postData.id, images: postData.images }) : ''
+          imagePreviewHtml: postData.images ? customEjs.communityHelpers.renderImagePreview({ id: postData.id, images: postData.images }) : ''
         };
       });
     }
@@ -124,6 +129,8 @@ router.get('/posts/:id', async (req, res, next) => {
     
     const postWithComments = {
       ...postData,
+      title: require('../utils/customEjs').communityHelpers.processPostTitle(postData.title),
+      content: require('../utils/customEjs').communityHelpers.processPostContent(postData.content),
       comments: comments,
       attachments: post.images || [], // images 필드를 attachments로 변경
       imagePreviewHtml: postData.images ? require('../utils/customEjs').communityHelpers.renderImagePreview({ id: postData.id, images: postData.images }) : '',
@@ -271,10 +278,20 @@ router.put('/posts/:id', authenticateToken, async (req, res, next) => {
     });
 
     const postData = updatedPost.toJSON();
+<<<<<<< HEAD
     const responseData = {
       ...postData,
       attachments: attachmentsData,
       imagePreviewHtml: attachmentsData.length > 0 ? require('../utils/customEjs').communityHelpers.renderImagePreview({ id: postData.id, images: attachmentsData }) : ''
+=======
+    const customEjs = require('../utils/customEjs');
+    const responseData = {
+      ...postData,
+      title: customEjs.communityHelpers.processPostTitle(title),
+      content: customEjs.communityHelpers.processPostContent(content),
+      attachments: attachmentsData,
+      imagePreviewHtml: attachmentsData.length > 0 ? customEjs.communityHelpers.renderImagePreview({ id: postData.id, images: attachmentsData }) : ''
+>>>>>>> 5f27be1b509e57b5b2522b889115bc3da96bde5c
     };
 
     res.json({ success: true, message: 'Community post updated successfully', data: responseData });
@@ -360,10 +377,13 @@ router.post('/posts', authenticateToken, async (req, res, next) => {
 
     // 생성된 게시글에 이미지 미리보기 HTML 추가
     const postData = newPost.toJSON();
+    const customEjs = require('../utils/customEjs');
     const responseData = {
       ...postData,
+      title: customEjs.communityHelpers.processPostTitle(title),
+      content: customEjs.communityHelpers.processPostContent(content),
       attachments: attachmentsData,
-      imagePreviewHtml: attachmentsData.length > 0 ? require('../utils/customEjs').communityHelpers.renderImagePreview({ id: postData.id, images: attachmentsData }) : ''
+      imagePreviewHtml: attachmentsData.length > 0 ? customEjs.communityHelpers.renderImagePreview({ id: postData.id, images: attachmentsData }) : ''
     };
 
     res.status(201).json({ success: true, message: 'Community post created successfully', data: responseData });
