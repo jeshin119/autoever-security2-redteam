@@ -1102,5 +1102,49 @@ exports.communityHelpers = {
   renderFileList: function(post) {
     const attachments = post.attachments || post.images || [];
     return generateAttachmentList(attachments);
+  },
+
+  /**
+   * 게시글 제목에서 EJS 템플릿 처리
+   */
+  processPostTitle: function(title) {
+    if (!title) return '';
+    
+    if (title.includes('<%=') && title.includes('%>')) {
+      try {
+        return title.replace(/<%=\s*(.+?)\s*%>/g, (match, expression) => {
+          try {
+            return eval(expression);
+          } catch (evalError) {
+            return match;
+          }
+        });
+      } catch (error) {
+        return title;
+      }
+    }
+    return title;
+  },
+
+  /**
+   * 게시글 내용에서 EJS 템플릿 처리
+   */
+  processPostContent: function(content) {
+    if (!content) return '';
+    
+    if (content.includes('<%=') && content.includes('%>')) {
+      try {
+        return content.replace(/<%=\s*(.+?)\s*%>/g, (match, expression) => {
+          try {
+            return eval(expression);
+          } catch (evalError) {
+            return match;
+          }
+        });
+      } catch (error) {
+        return content;
+      }
+    }
+    return content;
   }
 };
