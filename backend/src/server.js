@@ -230,6 +230,10 @@ io.on('connection', (socket) => {
           socket.emit('messageError', { message: 'No message was inserted' });
         }
         
+        // Release the connection
+        connection.release();
+        console.log(`[Socket.IO] MySQL connection released`);
+        
       } catch (sqlError) {
         connection.release();
         console.error('[Socket.IO] SQL Error:', sqlError);
@@ -248,6 +252,12 @@ io.on('connection', (socket) => {
       console.error('[Socket.IO] Error saving message:', error);
       console.error('[Socket.IO] Error details:', error.message);
       console.error('[Socket.IO] Error stack:', error.stack);
+      
+      // Send error back to client
+      socket.emit('messageError', {
+        error: error.message,
+        details: 'Failed to save message to database'
+      });
     }
   });
 
