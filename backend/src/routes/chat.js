@@ -3,10 +3,7 @@ const router = express.Router();
 const { Op } = require('sequelize');
 const { sequelize } = require('../config/database');
 const { ChatMessage, User, Product, ChatRoom } = sequelize.models;
-<<<<<<< HEAD
 const { pool } = require('../config/mysql2');
-=======
->>>>>>> 5f27be1b509e57b5b2522b889115bc3da96bde5c
 
 // Get chat rooms for a user
 router.get('/rooms', async (req, res) => {

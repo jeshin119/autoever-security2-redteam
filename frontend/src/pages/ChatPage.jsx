@@ -534,11 +534,7 @@ const ChatPage = () => {
                     id: data.id,
                     text: data.message,
                     isOwn: true,
-<<<<<<< HEAD
                     timestamp: data.created_at || data.createdAt,
-=======
-                    timestamp: data.createdAt,
->>>>>>> 5f27be1b509e57b5b2522b889115bc3da96bde5c
                     sender: user.name
                   };
                   break;
@@ -553,11 +549,7 @@ const ChatPage = () => {
             id: data.id,
             text: data.message,
             isOwn: isOwnMessage,
-<<<<<<< HEAD
             timestamp: data.created_at || data.createdAt,
-=======
-            timestamp: data.createdAt,
->>>>>>> 5f27be1b509e57b5b2522b889115bc3da96bde5c
             sender: isOwnMessage ? user.name : '상대방'
           };
           
@@ -684,11 +676,7 @@ const ChatPage = () => {
               id: msg.id,
               text: msg.message,
               isOwn: msg.sender_id === (user && user.id), // Use sender_id from backend
-<<<<<<< HEAD
               timestamp: msg.created_at || msg.createdAt,
-=======
-              timestamp: msg.createdAt,
->>>>>>> 5f27be1b509e57b5b2522b889115bc3da96bde5c
               sender: msg.sender_id === (user && user.id) ? user.name : selectedRoom.partnerName
             };
           });
