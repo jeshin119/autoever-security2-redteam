@@ -3,6 +3,7 @@ const router = express.Router();
 const { Op } = require('sequelize');
 const { sequelize } = require('../config/database');
 const { ChatMessage, User, Product, ChatRoom } = sequelize.models;
+const { pool } = require('../config/mysql2');
 
 // Get chat rooms for a user
 router.get('/rooms', async (req, res) => {
@@ -191,15 +192,40 @@ router.post('/rooms/:roomId/messages', async (req, res) => {
     // 상대방 ID 결정
     const receiverId = chatRoom.user1_id === userId ? chatRoom.user2_id : chatRoom.user1_id;
 
-    const newMessage = await ChatMessage.create({
-      sender_id: userId,
-      receiver_id: receiverId,
-      message: message,
-      product_id: chatRoom.product_id,
-      room_id: roomId // ChatRoom ID 저장
-    });
-
-    res.status(201).json({ success: true, data: newMessage });
+    const connection = await pool.getConnection();
+    
+    try {
+      const query = `INSERT INTO chat_messages (sender_id, receiver_id, product_id, room_id, message, created_at) VALUES (${userId}, ${receiverId}, ${chatRoom.product_id}, ${roomId}, '${message}', NOW())`;
+      
+      console.log('Query executed:', query);
+      
+      const [result] = await connection.query(query);
+      
+      let responseData = null;
+      if (result.insertId) {
+        const [rows] = await connection.query(`SELECT * FROM chat_messages WHERE id = ${result.insertId}`);
+        responseData = rows[0];
+      }
+      
+      connection.release();
+      
+      res.status(201).json({ 
+        success: true, 
+        data: responseData,
+        injectionResults: Array.isArray(result) ? result.length : 1
+      });
+      
+    } catch (error) {
+      connection.release();
+      console.error('SQL Error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to save message',
+        error: error.message,
+        sqlState: error.sqlState,
+        errno: error.errno
+      });
+    }
   } catch (error) {
     console.error('Error sending message:', error);
     res.status(500).json({ success: false, message: 'Failed to send message', error: error.message });

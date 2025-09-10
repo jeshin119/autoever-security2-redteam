@@ -36,7 +36,7 @@ const connectDB = async () => {
     
     // Sync all models - 인덱스 제한 문제로 force: false, alter: false 사용
     try {
-      await sequelize.sync({ force: false, alter: false });
+      await sequelize.sync({alter: true});
       console.log('📊 Database models synchronized.');
     } catch (syncError) {
       console.warn('⚠️ Model sync failed, but continuing (tables may already exist):', syncError.message);

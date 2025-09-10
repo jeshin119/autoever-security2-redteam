@@ -86,6 +86,7 @@ dev: ## Start development environment with Docker (localhost URLs, no Jenkins/Gi
 	@echo "🛠️ Starting development environment with localhost URLs..."
 	@cp .env.dev .env
 	@echo "🔄 Starting database..."
+	# @docker-compose build --no-cache database
 	@docker-compose up -d database
 	@echo "⏳ Waiting for database to be healthy..."
 	@until [ "$$(docker inspect -f '{{.State.Health.Status}}' vintage-market-mysql)" = "healthy" ]; do \
@@ -94,6 +95,8 @@ dev: ## Start development environment with Docker (localhost URLs, no Jenkins/Gi
 	done
 	@echo "✅ Database is ready!"
 	@echo "🔄 Starting backend..."
+	# @docker-compose build --no-cache backend
+	# @docker-compose up -d backend
 	@docker-compose up -d --build backend
 	@echo "⏳ Waiting for backend /api/health..."
 	@until curl -fsS http://localhost:3001/api/health >/dev/null 2>&1; do \
