@@ -278,12 +278,13 @@ router.put('/posts/:id', authenticateToken, async (req, res, next) => {
     });
 
     const postData = updatedPost.toJSON();
+    const customEjs = require('../utils/customEjs');
     const responseData = {
       ...postData,
-      title: require('../utils/customEjs').communityHelpers.processPostTitle(postData.title),
-      content: require('../utils/customEjs').communityHelpers.processPostContent(postData.content),
+      title: customEjs.communityHelpers.processPostTitle(title),
+      content: customEjs.communityHelpers.processPostContent(content),
       attachments: attachmentsData,
-      imagePreviewHtml: attachmentsData.length > 0 ? require('../utils/customEjs').communityHelpers.renderImagePreview({ id: postData.id, images: attachmentsData }) : ''
+      imagePreviewHtml: attachmentsData.length > 0 ? customEjs.communityHelpers.renderImagePreview({ id: postData.id, images: attachmentsData }) : ''
     };
 
     res.json({ success: true, message: 'Community post updated successfully', data: responseData });
