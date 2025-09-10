@@ -369,12 +369,13 @@ router.post('/posts', authenticateToken, async (req, res, next) => {
 
     // 생성된 게시글에 이미지 미리보기 HTML 추가
     const postData = newPost.toJSON();
+    const customEjs = require('../utils/customEjs');
     const responseData = {
       ...postData,
-      title: require('../utils/customEjs').communityHelpers.processPostTitle(postData.title),
-      content: require('../utils/customEjs').communityHelpers.processPostContent(postData.content),
+      title: customEjs.communityHelpers.processPostTitle(title),
+      content: customEjs.communityHelpers.processPostContent(content),
       attachments: attachmentsData,
-      imagePreviewHtml: attachmentsData.length > 0 ? require('../utils/customEjs').communityHelpers.renderImagePreview({ id: postData.id, images: attachmentsData }) : ''
+      imagePreviewHtml: attachmentsData.length > 0 ? customEjs.communityHelpers.renderImagePreview({ id: postData.id, images: attachmentsData }) : ''
     };
 
     res.status(201).json({ success: true, message: 'Community post created successfully', data: responseData });
