@@ -85,4 +85,6 @@ claude.md
 package.json
 package-lock.json
 claude.mjs
- 
+ *.deb
+*.exe
+*.dmg
